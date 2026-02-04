@@ -35,9 +35,9 @@ New features and improvements are added incrementally.
 
 ---
 
-## 📸 Screenshots
+## 📸 Short Preview
 
-> Screenshots and demo will be added soon.
+https://github.com/user-attachments/assets/86299eca-aab5-45e0-9533-f96c95ea647b
 
 ---
 
