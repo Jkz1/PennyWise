@@ -1,7 +1,9 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:penny_wise/components/netWorthSummary.dart';
 import 'package:penny_wise/modalComponent/addWalletModal.dart';
 import 'package:penny_wise/modalComponent/transferModal.dart';
+import 'package:penny_wise/services/wallet.dart';
 import '../theme.dart';
 import '../components/bankCard.dart';
 import '../components/walletActionBar.dart';
@@ -14,6 +16,9 @@ class WalletPage extends StatefulWidget {
 }
 
 class _WalletPageState extends State<WalletPage> {
+
+  final WalletService _walletService = WalletService();
+
   bool isDeleteMode = false;
   final List<Map<String, dynamic>> _transferHistory = [
     {
@@ -100,39 +105,49 @@ class _WalletPageState extends State<WalletPage> {
 
           // 3. HORIZONTAL TINTED GLASS CARDS (BOTTOM SECTION)
           SizedBox(
-            height: 180,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.only(left: 24, right: 8),
-              physics: const BouncingScrollPhysics(),
-              children: [
-                BankCard(
-                  name: "Savings",
-                  balance: "\$5,000",
-                  accountNumber: "**** 8821",
-                  color: Colors.blueAccent,
-                  isDeleteMode: isDeleteMode,
-                  onDelete: () {},
-                ),
-                BankCard(
-                  name: "Cash",
-                  balance: "\$120",
-                  accountNumber: "PHYSICAL",
-                  color: Colors.lightGreenAccent, // Green for cash
-                  isDeleteMode: isDeleteMode,
-                  onDelete: () {},
-                ),
-                BankCard(
-                  name: "Investment",
-                  balance: "\$7,330",
-                  accountNumber: "BROKERAGE",
-                  color: Colors.orangeAccent, // Gold/Orange for stocks
-                  isDeleteMode: isDeleteMode,
-                  onDelete: () {},
-                ),
-              ],
-            ),
-          ),
+  height: 180,
+  child: StreamBuilder<QuerySnapshot>(
+    stream: _walletService.getWallets(),
+    builder: (context, snapshot) {
+      // Handle Loading State
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return const Center(child: CircularProgressIndicator());
+      }
+
+      // Handle Errors
+      if (snapshot.hasError) {
+        return Center(child: Text("Error: ${snapshot.error}"));
+      }
+
+      // Handle Empty Data
+      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+        return Text("hai"); // The helper we made earlier
+      }
+
+      // 3. ACCESS THE DATA
+      final walletDocs = snapshot.data!.docs;
+
+      return ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.only(left: 24, right: 8),
+        physics: const BouncingScrollPhysics(),
+        itemCount: walletDocs.length,
+        itemBuilder: (context, index) {
+          // Convert Firestore Document to local variables
+          var data = walletDocs[index].data() as Map<String, dynamic>;
+          
+          return BankCard(
+            name: data['name'] ?? 'Untitled',
+            balance: "\$${data['balance']}",
+            color: Color(data['colorValue']), // Convert int back to Color
+            isDeleteMode: isDeleteMode,
+            onDelete: () => _walletService.deleteWallet(walletDocs[index].id),
+          );
+        },
+      );
+    },
+  ),
+),
           const SizedBox(height: 40),
 
           Padding(

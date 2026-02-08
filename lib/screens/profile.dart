@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
 import '../theme.dart';
 
-class ProfilePage extends StatelessWidget {
-  const ProfilePage({super.key});
+class ProfilePage extends StatefulWidget {
+  
+  final VoidCallback toggleTheme;
+  
+  const ProfilePage({super.key, required this.toggleTheme});
 
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
@@ -33,7 +41,9 @@ class ProfilePage extends StatelessWidget {
           ], isDarkMode),
 
           _buildSettingsGroup("App Settings", [
-            _buildSettingTile(Icons.dark_mode_outlined, "Dark Mode", isDarkMode, trailing: const Icon(Icons.chevron_right_rounded)),
+            _buildSettingTile(Icons.dark_mode_outlined, "Dark Mode", isDarkMode, trailing: Switch(value: isDarkMode, onChanged: (v){
+              widget.toggleTheme();
+            }, activeColor: FinTrackTheme.primaryColor)),
             _buildSettingTile(Icons.language_rounded, "Currency (USD)", isDarkMode),
           ], isDarkMode),
 

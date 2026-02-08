@@ -1,21 +1,26 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:penny_wise/firebase_options.dart';
-import 'package:penny_wise/screens/home.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:penny_wise/screens/home.dart';
 import 'package:penny_wise/screens/login.dart';
 import 'package:penny_wise/theme.dart';
-// import 'package:penny_wise/screens/loginGpt.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  runApp(const ProviderScope(child: MainApp()));
+
+  final SharedPreferences prefs = await SharedPreferences.getInstance();
+
+  final bool isLoggedIn = prefs.getBool('is_logged_in') ?? false;
+
+  runApp(ProviderScope(child: MainApp(isLoggiedIn: isLoggedIn)));
 }
 
-// main.dart
 class MainApp extends StatefulWidget {
-  const MainApp({super.key});
+  bool isLoggiedIn = false;
+  MainApp({super.key, required this.isLoggiedIn});
 
   @override
   State<MainApp> createState() => _MainAppState();
@@ -38,8 +43,11 @@ class _MainAppState extends State<MainApp> {
       theme: FinTrackTheme.lightTheme,
       darkTheme: FinTrackTheme.darkTheme,
       themeMode: _themeMode, // Controlled by your toggle
-      home: LoginPage(toggleTheme: _toggleTheme),
+      home: 
+      // widget.isLoggiedIn
+      //     ? HomePage(toggleTheme: _toggleTheme) 
+      //     : 
+          LoginPage(toggleTheme: _toggleTheme),
     );
-    // home: LoginPage(),
   }
 }

@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:penny_wise/services/wallet.dart';
 import '../theme.dart';
 
 void showAddWalletModal(BuildContext context, bool isDarkMode) {
@@ -8,6 +9,19 @@ void showAddWalletModal(BuildContext context, bool isDarkMode) {
     Colors.purpleAccent, Colors.pinkAccent, Colors.tealAccent
   ];
   Color selectedColor = selectorColors[0];
+
+  final TextEditingController nameController = TextEditingController();
+
+  final WalletService walletService = WalletService();
+
+  void addWallet()async {
+    final String walletName = nameController.text.trim();
+    await walletService.addWallet(
+      walletName,
+      selectedColor.value,
+    );
+    Navigator.of(context).pop();
+  }
 
   showModalBottomSheet(
     context: context,
@@ -30,9 +44,9 @@ void showAddWalletModal(BuildContext context, bool isDarkMode) {
               const SizedBox(height: 24),
               Text("Create New Wallet", style: TextStyle(color: FinTrackTheme.getTextColor(isDarkMode), fontSize: 22, fontWeight: FontWeight.bold)),
               const SizedBox(height: 32),
-              
-              // Wallet Name Input
               TextField(
+                controller: nameController,
+                onChanged: (_) => setModalState(() {}),
                 autofocus: true,
                 style: TextStyle(color: FinTrackTheme.getTextColor(isDarkMode), fontSize: 18),
                 decoration: InputDecoration(
@@ -77,11 +91,13 @@ void showAddWalletModal(BuildContext context, bool isDarkMode) {
               const SizedBox(height: 40),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
+                  disabledBackgroundColor: FinTrackTheme.primaryColor.withOpacity(0.3),
+                  disabledForegroundColor: Colors.white.withOpacity(0.7),
                   backgroundColor: FinTrackTheme.primaryColor,
                   minimumSize: const Size(double.infinity, 55),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                 ),
-                onPressed: () => Navigator.pop(context),
+                onPressed: nameController.text.isNotEmpty ? addWallet : null,
                 child: const Text("ADD WALLET", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               ),
               const SizedBox(height: 32),

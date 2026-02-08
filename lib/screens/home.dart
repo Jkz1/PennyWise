@@ -15,6 +15,7 @@ import 'package:penny_wise/screens/analytics.dart';
 import 'package:penny_wise/screens/planned.dart';
 import 'package:penny_wise/screens/profile.dart';
 import 'package:penny_wise/screens/wallet.dart';
+import 'package:penny_wise/services/test.dart';
 import 'package:penny_wise/theme.dart';
 
 class HomePage extends StatefulWidget {
@@ -51,7 +52,7 @@ class _HomePageState extends State<HomePage> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => QuickStat(isDarkMode: isDarkMode)
+      builder: (context) => QuickStat(isDarkMode: isDarkMode),
     );
   }
 
@@ -60,7 +61,8 @@ class _HomePageState extends State<HomePage> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => PlannedModal());
+      builder: (context) => PlannedModal(),
+    );
   }
 
   void _showCreatePlanSheet(
@@ -619,78 +621,92 @@ class _HomePageState extends State<HomePage> {
               color: FinTrackTheme.deepIndigo,
               isDarkMode: isDarkMode,
             ),
-        
-            _selectedIndex == 0 ?
-            SafeArea(
-              bottom: false,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // --- HEADER ---
-                    _buildHeader(textColor, isDarkMode),
-                    const SizedBox(height: 24),
-        
-                    // --- TOTAL BALANCE CARD ---
-                    _buildBalanceCard(
-                      glassColor,
-                      glassBorder,
-                      textColor,
-                      isDarkMode,
-                    ),
-        
-                    const SizedBox(height: 24),
-        
-                    // --- QUICK ACTIONS ---
-                    SectionHeader(title: "Quick Actions", textColor: textColor),
-                    const SizedBox(height: 16),
-                    QuickActions(
-                      isDarkMode: isDarkMode,
-                      textColor: textColor,
-                      actionsList: actions,
-                    ),
-                    const SizedBox(height: 32),
-        
-                    // --- RECENT TRANSACTIONS ---
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        SectionHeader(
-                          title: "Recent Activity",
-                          textColor: textColor,
-                        ),
-                        TextButton(
-                          onPressed: () {},
-                          child: Text(
-                            "See All",
-                            style: TextStyle(color: FinTrackTheme.primaryColor),
+
+            _selectedIndex == 0
+                ? SafeArea(
+                    bottom: false,
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // --- HEADER ---
+                          _buildHeader(textColor, isDarkMode),
+                          const SizedBox(height: 24),
+
+                          // --- TOTAL BALANCE CARD ---
+                          _buildBalanceCard(
+                            glassColor,
+                            glassBorder,
+                            textColor,
+                            isDarkMode,
                           ),
-                        ),
-                      ],
+                          // ElevatedButton(onPressed: () async {
+                          //   Test tes = Test();
+                          //   await tes.checkData();
+                          // }, child: Text("checkdata")),
+                          const SizedBox(height: 24),
+
+                          // --- QUICK ACTIONS ---
+                          SectionHeader(
+                            title: "Quick Actions",
+                            textColor: textColor,
+                          ),
+                          const SizedBox(height: 16),
+                          QuickActions(
+                            isDarkMode: isDarkMode,
+                            textColor: textColor,
+                            actionsList: actions,
+                          ),
+                          const SizedBox(height: 32),
+
+                          // --- RECENT TRANSACTIONS ---
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              SectionHeader(
+                                title: "Recent Activity",
+                                textColor: textColor,
+                              ),
+                              TextButton(
+                                onPressed: () {},
+                                child: Text(
+                                  "See All",
+                                  style: TextStyle(
+                                    color: FinTrackTheme.primaryColor,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          _buildTransactionList(
+                            glassColor,
+                            glassBorder,
+                            textColor,
+                            isDarkMode,
+                          ),
+
+                          const SizedBox(
+                            height: 120,
+                          ), // Space for floating bottom nav
+                        ],
+                      ),
                     ),
-                    _buildTransactionList(
-                      glassColor,
-                      glassBorder,
-                      textColor,
-                      isDarkMode,
-                    ),
-        
-                    const SizedBox(height: 120), // Space for floating bottom nav
-                  ],
-                ),
-              ),
-            ):_selectedIndex == 1 ?
-            SafeArea( bottom: false,child: WalletPage())
-            : _selectedIndex == 2 ? 
-            SafeArea( bottom: false,child: AnalyticsPage())
-            : SafeArea( bottom: false,child: ProfilePage()),
+                  )
+                : _selectedIndex == 1
+                ? SafeArea(bottom: false, child: WalletPage())
+                : _selectedIndex == 2
+                ? SafeArea(bottom: false, child: AnalyticsPage())
+                : SafeArea(
+                    bottom: false,
+                    child: ProfilePage(toggleTheme: widget.toggleTheme),
+                  ),
             // --- FLOATING GLASS BOTTOM NAV ---
             FloatingNav(
-            selectedIndex: _selectedIndex,
-            isDarkMode: isDarkMode,
-            onItemSelected: (index) => setState(() => _selectedIndex = index),
-          ),
+              selectedIndex: _selectedIndex,
+              isDarkMode: isDarkMode,
+              onItemSelected: (index) => setState(() => _selectedIndex = index),
+            ),
           ],
         ),
       ),
@@ -718,15 +734,6 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ],
-        ),
-        IconButton(
-          onPressed: widget.toggleTheme,
-          // onPressed: () {},
-          icon: Icon(
-            isDarkMode ? Icons.light_mode : Icons.dark_mode,
-            color: isDarkMode ? Colors.amber : const Color(0xFF1A237E),
-            // color: textColor,
-          ),
         ),
       ],
     );
@@ -844,34 +851,40 @@ class _HomePageState extends State<HomePage> {
     Color textColor,
     bool isDarkMode,
   ) {
-    // Demo data to show the difference
+    // Empty data for testing
     final List<Map<String, dynamic>> transactions = [
-      {
-        "title": "Monthly Salary",
-        "category": "Income",
-        "amount": "5,000.00",
-        "isIncome": true,
-      },
-      {
-        "title": "Grocery Store",
-        "category": "Food",
-        "amount": "45.00",
-        "isIncome": false,
-      },
-      {
-        "title": "Freelance Gig",
-        "category": "Work",
-        "amount": "250.00",
-        "isIncome": true,
-      },
-      {
-        "title": "Shell Gas",
-        "category": "Transport",
-        "amount": "60.00",
-        "isIncome": false,
-      },
+      // {
+      //   "title": "Monthly Salary",
+      //   "category": "Income",
+      //   "amount": "5,000.00",
+      //   "isIncome": true,
+      // },
+      // {
+      //   "title": "Grocery Store",
+      //   "category": "Food",
+      //   "amount": "45.00",
+      //   "isIncome": false,
+      // },
+      // {
+      //   "title": "Freelance Gig",
+      //   "category": "Work",
+      //   "amount": "250.00",
+      //   "isIncome": true,
+      // },
+      // {
+      //   "title": "Shell Gas",
+      //   "category": "Transport",
+      //   "amount": "60.00",
+      //   "isIncome": false,
+      // },
     ];
 
+    // 1. Check if the list is empty
+    if (transactions.isEmpty) {
+      return _buildEmptyState(textColor, isDarkMode);
+    }
+
+    // 2. Return the list if data exists
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -889,6 +902,54 @@ class _HomePageState extends State<HomePage> {
           glassBorder: glassBorder,
         );
       },
+    );
+  }
+
+  // 3. The Empty State Widget
+  Widget _buildEmptyState(Color textColor, bool isDarkMode) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 60),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // A soft glassmorphic icon container
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: isDarkMode
+                    ? Colors.white.withOpacity(0.05)
+                    : Colors.black.withOpacity(0.03),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.receipt_long_rounded,
+                size: 64,
+                color: textColor.withOpacity(0.2),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              "No Transactions Yet",
+              style: TextStyle(
+                color: textColor,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "Your spending history will appear here.\nTap the '+' button to get started.",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: textColor.withOpacity(0.4),
+                fontSize: 14,
+                height: 1.5,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

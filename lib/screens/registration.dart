@@ -14,8 +14,11 @@ class RegistrationPage extends StatefulWidget {
 }
 
 class _RegistrationPageState extends State<RegistrationPage> {
-  bool _isPasswordVisible = false;
-  bool _isConfirmVisible = false;
+  bool _isLoading = false;
+  TextEditingController usernameController = TextEditingController();
+  TextEditingController emailController = TextEditingController();
+  TextEditingController passwordController = TextEditingController();
+  TextEditingController confirmPasswordController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -25,11 +28,6 @@ class _RegistrationPageState extends State<RegistrationPage> {
     final Color textColor = FinTrackTheme.getTextColor(isDarkMode);
     final Color glassColor = FinTrackTheme.getGlassColor(isDarkMode);
     final Color glassBorder = FinTrackTheme.getGlassBorder(isDarkMode);
-
-    TextEditingController usernameController = TextEditingController();
-    TextEditingController emailController = TextEditingController();
-    TextEditingController passwordController = TextEditingController();
-    TextEditingController confirmPasswordController = TextEditingController();
 
     AuthService authService = AuthService();
 
@@ -47,39 +45,45 @@ class _RegistrationPageState extends State<RegistrationPage> {
             action: SnackBarAction(
               label: 'OK',
               textColor: Colors.white,
-              onPressed: () {},
+              onPressed: () {
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+              },
             ),
           ),
         );
         return;
       }
+      setState(() {
+        _isLoading = true;
+      });
       try {
-        await authService.register(email, password);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Registration Successful!"),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating, // Makes it look modern
-            action: SnackBarAction(
-              label: 'OK',
-              textColor: Colors.white,
-              onPressed: () {},
-            ),
-          ),
-        );
+        await authService.register(email, password, username);
+        if (mounted) {
+          Navigator.of(context).pop("success");
+        }
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString()),
-            backgroundColor: Colors.redAccent,
-            behavior: SnackBarBehavior.floating, // Makes it look modern
-            action: SnackBarAction(
-              label: 'OK',
-              textColor: Colors.white,
-              onPressed: () {},
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(e.toString()),
+              backgroundColor: Colors.redAccent,
+              behavior: SnackBarBehavior.floating, // Makes it look modern
+              action: SnackBarAction(
+                label: 'OK',
+                textColor: Colors.white,
+                onPressed: () {
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                },
+              ),
             ),
-          ),
-        );
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
     }
 
@@ -266,7 +270,10 @@ class _RegistrationPageState extends State<RegistrationPage> {
                               const SizedBox(height: 32),
 
                               // Register Button
-                              _buildRegisterButton(primaryColor, onRegistration),
+                              _buildRegisterButton(
+                                primaryColor,
+                                onRegistration,
+                              ),
                             ],
                           ),
                         ),
@@ -282,8 +289,6 @@ class _RegistrationPageState extends State<RegistrationPage> {
       ),
     );
   }
-
-  // Helper methods (kept the same as Login for perfect consistency)
 
   Widget _buildRegisterButton(Color primaryColor, VoidCallback onPressed) {
     return Container(
@@ -311,15 +316,24 @@ class _RegistrationPageState extends State<RegistrationPage> {
             borderRadius: BorderRadius.circular(16),
           ),
         ),
-        child: const Text(
-          "CREATE ACCOUNT",
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-            letterSpacing: 1,
-          ),
-        ),
+        child: _isLoading
+            ? const SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
+              )
+            : const Text(
+                "CREATE ACCOUNT",
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  letterSpacing: 1,
+                ),
+              ),
       ),
     );
   }

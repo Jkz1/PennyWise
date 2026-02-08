@@ -6,6 +6,7 @@ class Glasstextfield extends StatefulWidget {
   bool isDarkMode;
   Color textColor;
   bool isPassword = false;
+  bool? enable = true;
   TextEditingController? controller;
   Glasstextfield({
     super.key,
@@ -38,13 +39,13 @@ class _GlasstextfieldState extends State<Glasstextfield> {
         ),
       ),
       child: TextField(
+        enabled: widget.enable,
         obscureText: widget.isPassword && isObscured,
         style: TextStyle(color: widget.textColor),
         cursorColor: widget.textColor,
         controller: widget.controller,
         decoration: InputDecoration(
           prefixIcon: Icon(widget.icon, color: widget.textColor.withOpacity(0.7), size: 22),
-          // Suffix Icon logic for password
           suffixIcon: widget.isPassword
               ? IconButton(
                   icon: Icon(

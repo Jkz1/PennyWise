@@ -7,7 +7,6 @@ import '../theme.dart';
 class BankCard extends StatelessWidget {
   final String name;
   final String balance;
-  final String accountNumber;
   final bool isDeleteMode;
   final VoidCallback onDelete; // Use VoidCallback for cleaner types
   final Color color;
@@ -17,7 +16,6 @@ class BankCard extends StatelessWidget {
     super.key,
     required this.name,
     required this.balance,
-    required this.accountNumber,
     required this.color,
     required this.isDeleteMode,
     required this.onDelete,
@@ -100,15 +98,7 @@ class BankCard extends StatelessWidget {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          accountNumber,
-                          style: TextStyle(
-                            color: textColor.withOpacity(0.4),
-                            fontSize: 12,
-                            letterSpacing: 2,
-                          ),
-                        ),
+                        
                       ],
                     ),
                   ],

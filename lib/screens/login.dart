@@ -44,10 +44,11 @@ class _LoginPageState extends State<LoginPage> {
       try {
         await authService.login(email, password);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text("Login Successful!"),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating, // Makes it look modern
+            
           ),
         );
         Navigator.of(context).pushReplacement(
@@ -64,7 +65,9 @@ class _LoginPageState extends State<LoginPage> {
             action: SnackBarAction(
               label: "Dismiss",
               textColor: Colors.white,
-              onPressed: () {},
+              onPressed: () {
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+              },
             ),
           ),
         );
@@ -332,15 +335,33 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                         GestureDetector(
-                          onTap: () {
-                            Navigator.of(context).push(
+                          onTap: () async {
+                            final res = await Navigator.of(context).push(
                               MaterialPageRoute(
                                 builder: (context) => RegistrationPage(
                                   toggleTheme: widget.toggleTheme,
                                 ),
                               ),
                             );
-                            print("Navigate to Register");
+                            if (res == "success") {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text("Registration Successful!"),
+                                  backgroundColor: Colors.green,
+                                  behavior: SnackBarBehavior
+                                      .floating, // Makes it look modern
+                                  action: SnackBarAction(
+                                    label: 'OK',
+                                    textColor: Colors.white,
+                                    onPressed: () {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).hideCurrentSnackBar();
+                                    },
+                                  ),
+                                ),
+                              );
+                            }
                           },
                           child: Text(
                             "Register",
