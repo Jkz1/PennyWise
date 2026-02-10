@@ -31,6 +31,13 @@ void showDeleteConfirmation(BuildContext context, String walletName, VoidCallbac
             ),
             onPressed: () {
               onConfirm();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text("$walletName has been deleted."),
+                  duration: const Duration(seconds: 2),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
               Navigator.pop(context);
             },
             child: const Text("DELETE", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),

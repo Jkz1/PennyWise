@@ -1,59 +1,40 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:penny_wise/components/netWorthSummary.dart';
 import 'package:penny_wise/modalComponent/addWalletModal.dart';
 import 'package:penny_wise/modalComponent/transferModal.dart';
+import 'package:penny_wise/provider/deleteModeProvider.dart';
+import 'package:penny_wise/provider/wallet.dart'; // Assumes walletListProvider & deleteModeProvider are here
 import 'package:penny_wise/services/wallet.dart';
 import '../theme.dart';
 import '../components/bankCard.dart';
 import '../components/walletActionBar.dart';
 
-class WalletPage extends StatefulWidget {
+// --- NEW REVENUE STREAM LOGIC ---
+final totalBalanceProvider = Provider<double>((ref) {
+  final wallets = ref.watch(walletListProvider).value ?? [];
+  return wallets.fold(0.0, (sum, item) {
+    // Logic to extract double from your data map or model
+    final balance = double.tryParse(item['balance'].toString()) ?? 0.0;
+    return sum + balance;
+  });
+});
+
+class WalletPage extends ConsumerWidget {
   const WalletPage({super.key});
 
   @override
-  State<WalletPage> createState() => _WalletPageState();
-}
-
-class _WalletPageState extends State<WalletPage> {
-
-  final WalletService _walletService = WalletService();
-
-  bool isDeleteMode = false;
-  final List<Map<String, dynamic>> _transferHistory = [
-    {
-      "from": "Bank",
-      "to": "Savings",
-      "amount": "500.00",
-      "date": "Today, 10:24 AM",
-      "color": Colors.blueAccent,
-    },
-    {
-      "from": "Cash",
-      "to": "Investment",
-      "amount": "50.00",
-      "date": "Yesterday",
-      "color": Colors.orangeAccent,
-    },
-    {
-      "from": "Cash",
-      "to": "Investment",
-      "amount": "50.00",
-      "date": "Yesterday",
-      "color": Colors.orangeAccent,
-    },
-    {
-      "from": "Cash",
-      "to": "Investment",
-      "amount": "50.00",
-      "date": "Yesterday",
-      "color": Colors.orangeAccent,
-    },
-  ];
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // 1. WATCH PROVIDERS
+    final walletsAsync = ref.watch(walletListProvider);
+    final isDeleteMode = ref.watch(deleteModeProvider);
+    final totalBalance = ref.watch(totalBalanceProvider);
+    
+    // 2. THEME & SERVICE
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    // inside WalletPage build method
+    final textColor = FinTrackTheme.getTextColor(isDarkMode);
+    final walletService = WalletService(); // Or ref.read(walletServiceProvider)
+
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -66,28 +47,30 @@ class _WalletPageState extends State<WalletPage> {
             ),
           ),
 
-          // 1. TOTAL SUMMARY (TOP)
+          // 1. TOTAL SUMMARY (Now Real-time!)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: NetWorthSummary(
               isDarkMode: isDarkMode,
-              totalAssets: "\$12,450.00",
-              totalDebt: "\$800.00",
+              totalBalance: "\$${totalBalance.toStringAsFixed(2)}",
             ),
           ),
 
           const SizedBox(height: 32),
 
-          // 2. ACTION BAR (CENTER)
+          // 2. ACTION BAR
           WalletActionBar(
             isDarkMode: isDarkMode,
-            onTransfer: () => showTransferModal(context, isDarkMode),
+            onTransfer: () {
+              // Only open modal if we actually have wallet data
+              walletsAsync.whenData((wallets) => 
+                showTransferModal(context, isDarkMode, wallets)
+              );
+            },
             onAdd: () => showAddWalletModal(context, isDarkMode),
             onDelete: () {
-              setState(() {
-                isDeleteMode = !isDeleteMode;
-              });
-              print("Hai");
+              // Toggle global state instead of setState
+              ref.read(deleteModeProvider.notifier).update((state) => !state);
             },
             isDeleteMode: isDeleteMode,
           ),
@@ -103,53 +86,45 @@ class _WalletPageState extends State<WalletPage> {
           ),
           const SizedBox(height: 16),
 
-          // 3. HORIZONTAL TINTED GLASS CARDS (BOTTOM SECTION)
+          // 3. HORIZONTAL WALLET LIST
           SizedBox(
-  height: 180,
-  child: StreamBuilder<QuerySnapshot>(
-    stream: _walletService.getWallets(),
-    builder: (context, snapshot) {
-      // Handle Loading State
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        return const Center(child: CircularProgressIndicator());
-      }
+            height: 180,
+            child: walletsAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (err, stack) => _buildErrorState(err.toString()),
+              data: (wallets) {
+                if (wallets.isEmpty) {
+                  return _buildEmptyState(isDarkMode, textColor);
+                }
 
-      // Handle Errors
-      if (snapshot.hasError) {
-        return Center(child: Text("Error: ${snapshot.error}"));
-      }
+                return ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.only(left: 24, right: 8),
+                  physics: const BouncingScrollPhysics(),
+                  itemCount: wallets.length,
+                  itemBuilder: (context, index) {
+                    final data = wallets[index];
+                    
+                    return BankCard(
+                      name: data['name'] ?? 'Untitled',
+                      balance: "\$${data['balance']}",
+                      color: Color(data['colorValue'] ?? 0xFF424242),
+                      isDeleteMode: isDeleteMode,
+                      onDelete: () {
+                        // Turn off delete mode and call service
+                        ref.read(deleteModeProvider.notifier).state = false;
+                        walletService.deleteWallet(data['id']); // Assuming 'id' is in your map
+                      },
+                    );
+                  },
+                );
+              },
+            ),
+          ),
 
-      // Handle Empty Data
-      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-        return Text("hai"); // The helper we made earlier
-      }
-
-      // 3. ACCESS THE DATA
-      final walletDocs = snapshot.data!.docs;
-
-      return ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.only(left: 24, right: 8),
-        physics: const BouncingScrollPhysics(),
-        itemCount: walletDocs.length,
-        itemBuilder: (context, index) {
-          // Convert Firestore Document to local variables
-          var data = walletDocs[index].data() as Map<String, dynamic>;
-          
-          return BankCard(
-            name: data['name'] ?? 'Untitled',
-            balance: "\$${data['balance']}",
-            color: Color(data['colorValue']), // Convert int back to Color
-            isDeleteMode: isDeleteMode,
-            onDelete: () => _walletService.deleteWallet(walletDocs[index].id),
-          );
-        },
-      );
-    },
-  ),
-),
           const SizedBox(height: 40),
 
+          // 4. RECENT TRANSFERS HEADER
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Row(
@@ -163,7 +138,7 @@ class _WalletPageState extends State<WalletPage> {
                   "See All",
                   style: TextStyle(
                     color: FinTrackTheme.primaryColor,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.bold,
                     fontSize: 13,
                   ),
                 ),
@@ -173,87 +148,56 @@ class _WalletPageState extends State<WalletPage> {
 
           const SizedBox(height: 16),
 
-          // 4. TRANSFER HISTORY LIST
-          // ListView.builder(
-          //   shrinkWrap: true, // Crucial inside a SingleChildScrollView
-          //   padding: const EdgeInsets.symmetric(horizontal: 24),
-          //   itemCount: _transferHistory.length,
-          //   itemBuilder: (context, index) {
-          //     final item = _transferHistory[index];
-          //     return _buildTransferHistoryItem(item, isDarkMode);
-          //   },
-          // ),
-          ..._transferHistory.map((item) => _buildTransferHistoryItem(item, isDarkMode)),
-          SizedBox(height: 120,)
+          // 5. TRANSFER HISTORY
+          _buildTransferHistorySection(isDarkMode, textColor),
+          
+          const SizedBox(height: 120),
         ],
       ),
     );
   }
 
-  Widget _buildTransferHistoryItem(Map<String, dynamic> item, bool isDarkMode) {
-    final textColor = FinTrackTheme.getTextColor(isDarkMode);
+  // --- UI HELPER METHODS ---
 
+  Widget _buildEmptyState(bool isDarkMode, Color textColor) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12, left: 24, right: 24),
-      padding: const EdgeInsets.all(16),
+      width: double.infinity,
+      margin: const EdgeInsets.symmetric(horizontal: 24),
       decoration: BoxDecoration(
-        color: isDarkMode
-            ? Colors.white.withOpacity(0.05)
-            : Colors.black.withOpacity(0.03),
-        borderRadius: BorderRadius.circular(20),
+        color: isDarkMode ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03),
+        borderRadius: BorderRadius.circular(28),
         border: Border.all(color: Colors.white.withOpacity(0.05)),
       ),
-      child: Row(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Visual indicator of the destination wallet color
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: item['color'].withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.swap_horiz_rounded,
-              color: item['color'],
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 16),
+          Icon(Icons.account_balance_wallet_outlined, size: 40, color: textColor.withOpacity(0.2)),
+          const SizedBox(height: 12),
+          Text("No wallets found", style: TextStyle(color: textColor.withOpacity(0.5), fontWeight: FontWeight.w600)),
+        ],
+      ),
+    );
+  }
 
-          // Transfer Details
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "${item['from']} → ${item['to']}",
-                  style: TextStyle(
-                    color: textColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  item['date'],
-                  style: TextStyle(
-                    color: textColor.withOpacity(0.4),
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-          ),
+  Widget _buildErrorState(String message) {
+    return Center(child: Text("Error: $message", style: const TextStyle(color: Colors.red)));
+  }
 
-          // Amount
-          Text(
-            "\$${item['amount']}",
-            style: TextStyle(
-              color: textColor,
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
-          ),
+  Widget _buildTransferHistorySection(bool isDarkMode, Color textColor) {
+    // For now, using empty state. Later, you can wrap this in another StreamProvider!
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 30),
+      margin: const EdgeInsets.symmetric(horizontal: 24),
+      decoration: BoxDecoration(
+        color: isDarkMode ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03),
+        borderRadius: BorderRadius.circular(28),
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.history, size: 40, color: textColor.withOpacity(0.1)),
+          const SizedBox(height: 8),
+          Text("No recent transfers", style: TextStyle(color: textColor.withOpacity(0.3))),
         ],
       ),
     );

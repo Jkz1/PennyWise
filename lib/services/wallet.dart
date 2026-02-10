@@ -5,14 +5,12 @@ class WalletService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final String uid = FirebaseAuth.instance.currentUser!.uid;
 
-  Stream<QuerySnapshot> getWallets() {
-    final res = _db
+
+  Future<DocumentSnapshot> test() async {
+    return await _db
         .collection('users')
         .doc(uid)
-        .collection('wallets')
-        .orderBy('createdAt', descending: true)
-        .snapshots();
-    return res;
+        .get();
   }
 
   Future<void> addWallet(String name, int colorValue) async {

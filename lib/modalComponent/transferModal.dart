@@ -2,18 +2,12 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../theme.dart';
 
-void showTransferModal(BuildContext context, bool isDarkMode) {
+void showTransferModal(BuildContext context, bool isDarkMode, dynamic bankData) {
   // Mock data for available wallets
-  final List<Map<String, dynamic>> wallets = [
-    {"name": "Bank", "icon": Icons.account_balance_rounded, "color": Colors.blueAccent},
-    {"name": "Cash", "icon": Icons.payments_rounded, "color": Colors.amberAccent},
-    {"name": "Savings", "icon": Icons.savings_rounded, "color": Colors.orangeAccent},
-    {"name": "Crypto", "icon": Icons.currency_bitcoin_rounded, "color": Colors.purpleAccent},
-  ];
-
+  final List<Map<String, dynamic>> wallets = List<Map<String, dynamic>>.from(bankData);
+  print(wallets[0]['colorValue']);
   int selectedFromIndex = 0;
-  int selectedToIndex = 1;
-
+  int selectedToIndex = 1; 
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -135,10 +129,19 @@ Widget _buildSectionLabel(String text, bool isDarkMode) {
   );
 }
 
-// Helper: Individual Wallet Picker Item
+
 Widget _buildWalletOption(Map<String, dynamic> wallet, bool isSelected, VoidCallback onTap, bool isDarkMode, {bool disabled = false}) {
-  final accentColor = wallet['color'] as Color;
+  final accentColor = Color(wallet['colorValue']);
   
+  // Logic to get initials (e.g., "Bank Account" -> "BA")
+  String getInitials(String name) {
+    if (name.isEmpty) return "";
+    List<String> names = name.trim().split(" ");
+    return names.length > 1 
+        ? (names[0][0] + names[1][0]).toUpperCase() 
+        : names[0][0].toUpperCase();
+  }
+
   return GestureDetector(
     onTap: disabled ? null : onTap,
     child: Opacity(
@@ -158,12 +161,30 @@ Widget _buildWalletOption(Map<String, dynamic> wallet, bool isSelected, VoidCall
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(wallet['icon'], color: isSelected ? accentColor : (isDarkMode ? Colors.white30 : Colors.black38), size: 28),
+            // --- INITIALS CIRCLE ---
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: isSelected ? accentColor : (isDarkMode ? Colors.white10 : Colors.black12),
+                shape: BoxShape.circle,
+              ),
+              child: Text(
+                getInitials(wallet['name']),
+                style: TextStyle(
+                  color: isSelected ? Colors.white : (isDarkMode ? Colors.white30 : Colors.black38),
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
             const SizedBox(height: 8),
+            // --- WALLET NAME ---
             Text(
               wallet['name'],
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: isSelected ? FinTrackTheme.getTextColor(isDarkMode) : (isDarkMode ? Colors.white30 : Colors.black38),
+                color: isSelected ? (isDarkMode ? Colors.white : Colors.black87) : (isDarkMode ? Colors.white30 : Colors.black38),
                 fontSize: 12,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
