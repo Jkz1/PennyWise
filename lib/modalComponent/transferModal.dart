@@ -306,6 +306,8 @@ Widget _buildWalletOption(
         : names[0][0].toUpperCase();
   }
 
+
+
   return GestureDetector(
     onTap: disabled ? null : onTap,
     child: Opacity(
@@ -351,6 +353,20 @@ Widget _buildWalletOption(
             // --- WALLET NAME ---
             Text(
               wallet['name'],
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: isSelected
+                    ? (isDarkMode ? Colors.white : Colors.black87)
+                    : (isDarkMode ? Colors.white30 : Colors.black38),
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+            const SizedBox(height: 8),
+            // --- WALLET NAME ---
+            Text(
+              CurrencyFormatter.format(wallet['balance']).toString(),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
