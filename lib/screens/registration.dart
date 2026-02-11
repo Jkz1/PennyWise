@@ -1,19 +1,20 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:penny_wise/components/backgroundBlob.dart';
 import 'package:penny_wise/components/glassTextField.dart';
+import 'package:penny_wise/provider/darkModeProv.dart';
 import 'package:penny_wise/theme.dart';
 import 'package:penny_wise/services/auth.dart';
 
-class RegistrationPage extends StatefulWidget {
-  final VoidCallback toggleTheme;
-  const RegistrationPage({super.key, required this.toggleTheme});
+class RegistrationPage extends ConsumerStatefulWidget {
+  const RegistrationPage({super.key});
 
   @override
-  State<RegistrationPage> createState() => _RegistrationPageState();
+  ConsumerState<RegistrationPage> createState() => _RegistrationPageState();
 }
 
-class _RegistrationPageState extends State<RegistrationPage> {
+class _RegistrationPageState extends ConsumerState<RegistrationPage> {
   bool _isLoading = false;
   TextEditingController usernameController = TextEditingController();
   TextEditingController emailController = TextEditingController();
@@ -22,7 +23,11 @@ class _RegistrationPageState extends State<RegistrationPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final isDarkMode = ref.watch(darkmode);
+
+    void toggleTheme() {
+      ref.read(darkmode.notifier).toggle();
+    }
 
     final Color primaryColor = FinTrackTheme.primaryColor;
     final Color textColor = FinTrackTheme.getTextColor(isDarkMode);
@@ -104,7 +109,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                 isDarkMode ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
                 color: isDarkMode ? Colors.amber : FinTrackTheme.deepIndigo,
               ),
-              onPressed: widget.toggleTheme,
+              onPressed: toggleTheme,
             ),
           ),
           const SizedBox(width: 8),

@@ -1,12 +1,13 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:penny_wise/modalComponent/deleteWalletConfirmation.dart';
+import 'package:penny_wise/utils/formatters.dart';
 import '../theme.dart';
 // ... imports unchanged
 
 class BankCard extends StatelessWidget {
   final String name;
-  final String balance;
+  final dynamic balance;
   final bool isDeleteMode;
   final VoidCallback onDelete; // Use VoidCallback for cleaner types
   final Color color;
@@ -91,7 +92,7 @@ class BankCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          balance,
+                          CurrencyFormatter.format(balance),
                           style: TextStyle(
                             color: textColor,
                             fontSize: 26,

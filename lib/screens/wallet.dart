@@ -1,24 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:penny_wise/components/netWorthSummary.dart';
 import 'package:penny_wise/modalComponent/addWalletModal.dart';
 import 'package:penny_wise/modalComponent/transferModal.dart';
 import 'package:penny_wise/provider/deleteModeProvider.dart';
 import 'package:penny_wise/provider/wallet.dart'; // Assumes walletListProvider & deleteModeProvider are here
 import 'package:penny_wise/services/wallet.dart';
+import 'package:penny_wise/utils/formatters.dart';
 import '../theme.dart';
 import '../components/bankCard.dart';
 import '../components/walletActionBar.dart';
-
-// --- NEW REVENUE STREAM LOGIC ---
-final totalBalanceProvider = Provider<double>((ref) {
-  final wallets = ref.watch(walletListProvider).value ?? [];
-  return wallets.fold(0.0, (sum, item) {
-    // Logic to extract double from your data map or model
-    final balance = double.tryParse(item['balance'].toString()) ?? 0.0;
-    return sum + balance;
-  });
-});
 
 class WalletPage extends ConsumerWidget {
   const WalletPage({super.key});
@@ -29,7 +21,6 @@ class WalletPage extends ConsumerWidget {
     final walletsAsync = ref.watch(walletListProvider);
     final isDeleteMode = ref.watch(deleteModeProvider);
     final totalBalance = ref.watch(totalBalanceProvider);
-    
     // 2. THEME & SERVICE
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final textColor = FinTrackTheme.getTextColor(isDarkMode);
@@ -52,7 +43,7 @@ class WalletPage extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: NetWorthSummary(
               isDarkMode: isDarkMode,
-              totalBalance: "\$${totalBalance.toStringAsFixed(2)}",
+              totalBalance: CurrencyFormatter.format(totalBalance)
             ),
           ),
 
@@ -62,7 +53,6 @@ class WalletPage extends ConsumerWidget {
           WalletActionBar(
             isDarkMode: isDarkMode,
             onTransfer: () {
-              // Only open modal if we actually have wallet data
               walletsAsync.whenData((wallets) => 
                 showTransferModal(context, isDarkMode, wallets)
               );
@@ -107,7 +97,7 @@ class WalletPage extends ConsumerWidget {
                     
                     return BankCard(
                       name: data['name'] ?? 'Untitled',
-                      balance: "\$${data['balance']}",
+                      balance: data['balance'],
                       color: Color(data['colorValue'] ?? 0xFF424242),
                       isDeleteMode: isDeleteMode,
                       onDelete: () {

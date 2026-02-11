@@ -2,6 +2,7 @@
 
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:penny_wise/components/floatingNav.dart';
 import 'package:penny_wise/modalComponent/addExpenseModal.dart';
 import 'package:penny_wise/components/backgroundBlob.dart';
@@ -11,6 +12,7 @@ import 'package:penny_wise/components/quickActions.dart';
 import 'package:penny_wise/components/sectionHeader.dart';
 import 'package:penny_wise/modalComponent/quickStatModal.dart';
 import 'package:penny_wise/model/expenseCategory.dart';
+import 'package:penny_wise/provider/darkModeProv.dart';
 import 'package:penny_wise/screens/analytics.dart';
 import 'package:penny_wise/screens/planned.dart';
 import 'package:penny_wise/screens/profile.dart';
@@ -18,19 +20,22 @@ import 'package:penny_wise/screens/wallet.dart';
 import 'package:penny_wise/services/test.dart';
 import 'package:penny_wise/theme.dart';
 
-class HomePage extends StatefulWidget {
-  final VoidCallback toggleTheme;
-  const HomePage({super.key, required this.toggleTheme});
+class HomePage extends ConsumerStatefulWidget {
+  const HomePage({super.key});
   // const HomePage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  ConsumerState<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends ConsumerState<HomePage> {
   CategoryItem selectedCategory = categories_expenses[0];
   int _selectedIndex = 0;
   bool _isBalanceVisible = true;
+
+  void toggleTheme(){
+    ref.read(darkmode.notifier).toggle();
+  }
 
   _showAddExpenseSheet() {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
@@ -699,7 +704,7 @@ class _HomePageState extends State<HomePage> {
                 ? SafeArea(bottom: false, child: AnalyticsPage())
                 : SafeArea(
                     bottom: false,
-                    child: ProfilePage(toggleTheme: widget.toggleTheme),
+                    child: ProfilePage(toggleTheme: toggleTheme),
                   ),
             // --- FLOATING GLASS BOTTOM NAV ---
             FloatingNav(

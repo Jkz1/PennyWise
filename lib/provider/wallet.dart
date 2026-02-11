@@ -15,7 +15,17 @@ final walletListProvider = StreamProvider<List<dynamic>>((ref) {
       .collection('wallets')
       .orderBy('createdAt', descending: true)
       .snapshots()
-      .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+      .map((snapshot) {
+        return snapshot.docs.map((doc) {
+          // 1. Get the data map
+          final data = doc.data();
+          
+          // 2. Add the ID into the map
+          data['id'] = doc.id; 
+          
+          return data;
+        }).toList();
+      });
 });
 
 

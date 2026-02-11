@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:penny_wise/modalComponent/deleteWalletConfirmation.dart';
 import '../theme.dart';
 
 class WalletActionBar extends StatelessWidget {

@@ -1,15 +1,10 @@
 
-import 'package:flutter/cupertino.dart';
+// Your existing Dark Mode Provider (simplified)
 import 'package:flutter_riverpod/legacy.dart';
 
-class Counterprov extends StateNotifier<bool> {
-  Counterprov() : super(true);
-
-  void toggle() {
-    state = !state;
-  }
+class DarkModeProv extends StateNotifier<bool> {
+  DarkModeProv() : super(true);
+  void toggle() => state = !state;
 }
 
-final counterProv = StateNotifierProvider<Counterprov,bool>((ref) {
-  return Counterprov();
-});
+final darkmode = StateNotifierProvider<DarkModeProv, bool>((ref) => DarkModeProv());

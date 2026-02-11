@@ -1,5 +1,4 @@
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
 class Counterprov extends StateNotifier<int> {

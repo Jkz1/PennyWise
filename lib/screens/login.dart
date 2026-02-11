@@ -4,20 +4,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:penny_wise/components/backgroundBlob.dart';
 import 'package:penny_wise/components/glassTextField.dart';
 import 'package:penny_wise/provider/counterProv.dart';
+import 'package:penny_wise/provider/darkModeProv.dart';
 import 'package:penny_wise/screens/home.dart';
 import 'package:penny_wise/screens/registration.dart';
 import 'package:penny_wise/services/auth.dart';
 import 'package:penny_wise/theme.dart';
 
-class LoginPage extends StatefulWidget {
-  final VoidCallback toggleTheme;
-  const LoginPage({super.key, required this.toggleTheme});
+class LoginPage extends ConsumerStatefulWidget {
+  const LoginPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  ConsumerState<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends ConsumerState<LoginPage> {
   // 2. State for Password Visibility
   bool isLoading = false;
 
@@ -26,7 +26,7 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final isDarkMode = ref.watch(darkmode);
 
     final Color primaryColor = FinTrackTheme.primaryColor;
     final Color secondaryColor = FinTrackTheme.secondaryColor;
@@ -53,7 +53,7 @@ class _LoginPageState extends State<LoginPage> {
         );
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (_) => HomePage(toggleTheme: widget.toggleTheme),
+            builder: (_) => HomePage(),
           ),
         );
       } catch (e) {
@@ -92,7 +92,7 @@ class _LoginPageState extends State<LoginPage> {
                 isDarkMode ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
                 color: isDarkMode ? Colors.amber : const Color(0xFF1A237E),
               ),
-              onPressed: widget.toggleTheme,
+              onPressed: ref.read(darkmode.notifier).toggle,
             ),
           ),
         ],
@@ -338,9 +338,7 @@ class _LoginPageState extends State<LoginPage> {
                           onTap: () async {
                             final res = await Navigator.of(context).push(
                               MaterialPageRoute(
-                                builder: (context) => RegistrationPage(
-                                  toggleTheme: widget.toggleTheme,
-                                ),
+                                builder: (context) => RegistrationPage(),
                               ),
                             );
                             if (res == "success") {
@@ -389,6 +387,4 @@ class _LoginPageState extends State<LoginPage> {
       ),
     );
   }
-
-  // --- WIDGET BUILDERS ---
 }
