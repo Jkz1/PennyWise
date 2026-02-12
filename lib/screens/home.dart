@@ -13,12 +13,14 @@ import 'package:penny_wise/components/sectionHeader.dart';
 import 'package:penny_wise/modalComponent/quickStatModal.dart';
 import 'package:penny_wise/model/expenseCategory.dart';
 import 'package:penny_wise/provider/darkModeProv.dart';
+import 'package:penny_wise/provider/wallet.dart';
 import 'package:penny_wise/screens/analytics.dart';
 import 'package:penny_wise/screens/planned.dart';
 import 'package:penny_wise/screens/profile.dart';
 import 'package:penny_wise/screens/wallet.dart';
 import 'package:penny_wise/services/test.dart';
 import 'package:penny_wise/theme.dart';
+import 'package:penny_wise/utils/formatters.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -33,7 +35,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   int _selectedIndex = 0;
   bool _isBalanceVisible = true;
 
-  void toggleTheme(){
+  void toggleTheme() {
     ref.read(darkmode.notifier).toggle();
   }
 
@@ -602,6 +604,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final transactionHistoryProv = ref.watch(transactionHistory);
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final textColor = FinTrackTheme.getTextColor(isDarkMode);
     final glassColor = FinTrackTheme.getGlassColor(isDarkMode);
@@ -750,6 +753,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     Color textColor,
     bool isDarkMode,
   ) {
+    final totalBalance = ref.watch(totalBalanceProvider);
     return ClipRRect(
       borderRadius: BorderRadius.circular(30),
       child: BackdropFilter(
@@ -795,7 +799,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 ],
               ),
               Text(
-                _isBalanceVisible ? "\$42,580.00" : "*******",
+                _isBalanceVisible ? CurrencyFormatter.format(totalBalance) : "*******",
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 36,
@@ -856,32 +860,33 @@ class _HomePageState extends ConsumerState<HomePage> {
     Color textColor,
     bool isDarkMode,
   ) {
+    final transactionHistoryProv = ref.watch(transactionHistory);
     // Empty data for testing
     final List<Map<String, dynamic>> transactions = [
-      // {
-      //   "title": "Monthly Salary",
-      //   "category": "Income",
-      //   "amount": "5,000.00",
-      //   "isIncome": true,
-      // },
-      // {
-      //   "title": "Grocery Store",
-      //   "category": "Food",
-      //   "amount": "45.00",
-      //   "isIncome": false,
-      // },
-      // {
-      //   "title": "Freelance Gig",
-      //   "category": "Work",
-      //   "amount": "250.00",
-      //   "isIncome": true,
-      // },
-      // {
-      //   "title": "Shell Gas",
-      //   "category": "Transport",
-      //   "amount": "60.00",
-      //   "isIncome": false,
-      // },
+      {
+        "title": "Monthly Salary",
+        "category": "Income",
+        "amount": "5,000.00",
+        "isIncome": true,
+      },
+      {
+        "title": "Grocery Store",
+        "category": "Food",
+        "amount": "45.00",
+        "isIncome": false,
+      },
+      {
+        "title": "Freelance Gig",
+        "category": "Work",
+        "amount": "250.00",
+        "isIncome": true,
+      },
+      {
+        "title": "Shell Gas",
+        "category": "Transport",
+        "amount": "60.00",
+        "isIncome": false,
+      },
     ];
 
     // 1. Check if the list is empty
@@ -890,23 +895,33 @@ class _HomePageState extends ConsumerState<HomePage> {
     }
 
     // 2. Return the list if data exists
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: transactions.length,
-      itemBuilder: (context, index) {
-        final item = transactions[index];
-        return _buildTransactionItem(
-          title: item['title'],
-          category: item['category'],
-          amount: item['amount'],
-          isIncome: item['isIncome'],
-          textColor: textColor,
-          isDarkMode: isDarkMode,
-          glassColor: glassColor,
-          glassBorder: glassBorder,
+    return transactionHistoryProv.when(
+      data: (transactions) {
+        if (transactions.isEmpty) {
+          return _buildEmptyState(textColor, isDarkMode);
+        }
+        return ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: transactions.length,
+          itemBuilder: (context, index) {
+            final item = transactions[index];
+            return _buildTransactionItem(
+              walletName: item['walletName'],
+              title: item['title'],
+              category: item['category'],
+              amount: item['amount'],
+              isExpense: item['isExpense'],
+              textColor: textColor,
+              isDarkMode: isDarkMode,
+              glassColor: glassColor,
+              glassBorder: glassBorder,
+            );
+          },
         );
       },
+      loading: () => Center(child: CircularProgressIndicator()),
+      error: (err, stack) => Center(child: Text('Error: $err')),
     );
   }
 
@@ -959,19 +974,20 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   Widget _buildTransactionItem({
+    required String walletName,
     required String title,
     required String category,
-    required String amount,
-    required bool isIncome,
+    required double amount,
+    required bool isExpense,
     required Color textColor,
     required bool isDarkMode,
     required Color glassColor,
     required Color glassBorder,
   }) {
     // Use Emerald for income, and either Red or Standard Text for expense
-    final Color statusColor = isIncome
-        ? FinTrackTheme.primaryColor
-        : Colors.redAccent;
+    final Color statusColor = isExpense
+        ? Colors.redAccent
+        : FinTrackTheme.primaryColor;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -991,9 +1007,9 @@ class _HomePageState extends ConsumerState<HomePage> {
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(
-              isIncome
-                  ? Icons.arrow_downward_rounded
-                  : Icons.arrow_upward_rounded,
+              isExpense
+                ? Icons.arrow_upward_rounded
+                  : Icons.arrow_downward_rounded,
               color: statusColor,
               size: 20,
             ),
@@ -1025,15 +1041,15 @@ class _HomePageState extends ConsumerState<HomePage> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                "${isIncome ? '+' : '-'} \$$amount",
+                "${isExpense ? '-' : '+'} ${CurrencyFormatter.format(amount)}",
                 style: TextStyle(
-                  color: isIncome ? statusColor : textColor,
+                  color: isExpense ? textColor : statusColor,
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
                 ),
               ),
               Text(
-                "Cash",
+                walletName,
                 style: TextStyle(
                   color: textColor.withOpacity(0.3),
                   fontSize: 10,

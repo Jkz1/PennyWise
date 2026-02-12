@@ -28,6 +28,50 @@ final walletListProvider = StreamProvider<List<dynamic>>((ref) {
         }).toList();
       });
 });
+
+final transactionHistory = StreamProvider<List<dynamic>>((ref) {
+  
+  final walletsAsync = ref.watch(walletListProvider);
+  final firestore = FirebaseFirestore.instance;
+  final String uid = FirebaseAuth.instance.currentUser!.uid;
+
+  return firestore
+      .collection('users')
+      .doc(uid)
+      .collection('transactions')
+      .orderBy('timestamp', descending: true)
+      .snapshots()
+      .map((snapshot) {
+        return snapshot.docs.map((doc) {
+          final wallets = walletsAsync.value ?? [];
+
+          final data = doc.data();
+
+          final Timestamp? timestamp = data['timestamp'] as Timestamp?;
+
+          // 2. Convert to DateTime (handle null in case of pending server writes)
+          final DateTime dateTime = timestamp?.toDate() ?? DateTime.now();
+
+          final wallet = wallets.firstWhere(
+            (w) => w['id'] == data['wallet'],
+            orElse: () => {'name': 'Unknown Wallet'},
+          );
+
+          // 3. Format it: HH:mm dd/MM/yyyy
+          // Note: HH is 24-hour, hh is 12-hour.
+          final String formattedDate = DateFormat(
+            'HH:mm dd/MM/yyyy',
+          ).format(dateTime);
+          data['timestamp'] = formattedDate;
+          return {
+            ...data,
+            "walletName" : wallet['name'],
+            'color': wallet['colorValue'] ?? 0xFF000000,
+          };
+        }).toList();
+      });
+});
+
 final combinedTransactionProvider = StreamProvider<List<dynamic>>((ref) {
   final walletsAsync = ref.watch(walletListProvider);
 
@@ -43,6 +87,7 @@ final combinedTransactionProvider = StreamProvider<List<dynamic>>((ref) {
       .map((snapshot) {
         // Get the actual list of wallets from the AsyncValue
         final wallets = walletsAsync.value ?? [];
+
 
         return snapshot.docs.map((doc) {
           final data = doc.data();

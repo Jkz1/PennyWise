@@ -13,6 +13,7 @@ final List<CategoryItem> categories_expenses = [
   CategoryItem("Shopping", Icons.shopping_bag),
   CategoryItem("Bills", Icons.receipt_long),
   CategoryItem("Health", Icons.medical_services),
+  CategoryItem("Other", Icons.more_horiz),
 ];
 
 final List<CategoryItem> categories_income = [
@@ -20,4 +21,5 @@ final List<CategoryItem> categories_income = [
   CategoryItem("Business", Icons.business_center),
   CategoryItem("Investment", Icons.trending_up),
   CategoryItem("Gift", Icons.card_giftcard),
+  CategoryItem("Other", Icons.more_horiz),
 ];
