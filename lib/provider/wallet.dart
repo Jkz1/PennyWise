@@ -20,7 +20,6 @@ final walletListProvider = StreamProvider<List<dynamic>>((ref) {
         return snapshot.docs.map((doc) {
           // 1. Get the data map
           final data = doc.data();
-
           // 2. Add the ID into the map
           data['id'] = doc.id;
 

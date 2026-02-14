@@ -83,13 +83,32 @@ class WalletPage extends ConsumerWidget {
           WalletActionBar(
             isDarkMode: isDarkMode,
             onTransfer: () {
-              walletsAsync.whenData(
-                (wallets) => showTransferModal(context, isDarkMode, wallets),
+              walletsAsync.when(
+                data: (wallets) {
+                  if (wallets.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Please add a wallet before transferring.',
+                        ),
+                        backgroundColor: Colors.amber,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                    return;
+                  }
+                  showTransferModal(context, isDarkMode, wallets);
+                },
+                error: (err, stack) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error loading wallets: $err')),
+                  );
+                },
+                loading: () => null,
               );
             },
             onAdd: () => showAddWalletModal(context, isDarkMode),
             onDelete: () {
-              // Toggle global state instead of setState
               ref.read(deleteModeProvider.notifier).update((state) => !state);
             },
             isDeleteMode: isDeleteMode,
