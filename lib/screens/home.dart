@@ -13,6 +13,7 @@ import 'package:penny_wise/components/sectionHeader.dart';
 import 'package:penny_wise/modalComponent/quickStatModal.dart';
 import 'package:penny_wise/model/expenseCategory.dart';
 import 'package:penny_wise/provider/darkModeProv.dart';
+import 'package:penny_wise/provider/statProv.dart';
 import 'package:penny_wise/provider/wallet.dart';
 import 'package:penny_wise/screens/analytics.dart';
 import 'package:penny_wise/screens/planned.dart';
@@ -42,13 +43,25 @@ class _HomePageState extends ConsumerState<HomePage> {
   _showAddExpenseSheet() {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final textColor = FinTrackTheme.getTextColor(isDarkMode);
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => ExpenseModal(isDarkMode: isDarkMode),
-    );
+    final walletsAsync = ref.watch(walletListProvider);
+    walletsAsync.whenData((wallets) {
+      if (wallets.isEmpty || wallets.every((w) => w['isDeleted'])) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please add a wallet before transferring.'),
+            backgroundColor: Colors.amber,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) => ExpenseModal(isDarkMode: isDarkMode),
+      );
+    });
   }
 
   _showQuickStatsSheet() {
@@ -604,6 +617,9 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final monthlyStats = ref.watch(
+      monthlyIncomeExpensesProvider(ref.watch(activeMonthProvider)),
+    );
     final transactionHistoryProv = ref.watch(transactionHistory);
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final textColor = FinTrackTheme.getTextColor(isDarkMode);
@@ -754,6 +770,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     bool isDarkMode,
   ) {
     final totalBalance = ref.watch(totalBalanceProvider);
+    final stats =  ref.watch(monthlyIncomeExpensesProvider(ref.watch(activeMonthProvider)));
     return ClipRRect(
       borderRadius: BorderRadius.circular(30),
       child: BackdropFilter(
@@ -799,7 +816,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                 ],
               ),
               Text(
-                _isBalanceVisible ? CurrencyFormatter.format(totalBalance) : "*******",
+                _isBalanceVisible
+                    ? CurrencyFormatter.format(totalBalance)
+                    : "*******",
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 36,
@@ -810,9 +829,9 @@ class _HomePageState extends ConsumerState<HomePage> {
               const SizedBox(height: 20),
               Row(
                 children: [
-                  _buildStatItem(Icons.arrow_upward, "Income", "\$5,200"),
+                  _buildStatItem(Icons.arrow_upward, "Income", "\$${stats['totalIncome']}"),
                   const SizedBox(width: 24),
-                  _buildStatItem(Icons.arrow_downward, "Expenses", "\$1,840"),
+                  _buildStatItem(Icons.arrow_downward, "Expenses", "\$${stats['totalExpense']}"),
                 ],
               ),
             ],
@@ -1008,7 +1027,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
             child: Icon(
               isExpense
-                ? Icons.arrow_upward_rounded
+                  ? Icons.arrow_upward_rounded
                   : Icons.arrow_downward_rounded,
               color: statusColor,
               size: 20,

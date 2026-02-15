@@ -22,7 +22,6 @@ final walletListProvider = StreamProvider<List<dynamic>>((ref) {
           final data = doc.data();
           // 2. Add the ID into the map
           data['id'] = doc.id;
-
           return data;
         }).toList();
       });

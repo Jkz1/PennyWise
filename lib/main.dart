@@ -34,7 +34,7 @@ class MainApp extends ConsumerWidget {
       darkTheme: FinTrackTheme.darkTheme,
       themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
       home:
-          // isLoggedIn ? const HomePage() :
+          isLoggedIn ? const HomePage() :
           const LoginPage(),
     );
   }

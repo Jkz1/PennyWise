@@ -9,6 +9,7 @@ import 'package:penny_wise/screens/home.dart';
 import 'package:penny_wise/screens/registration.dart';
 import 'package:penny_wise/services/auth.dart';
 import 'package:penny_wise/theme.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -43,6 +44,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       String password = passwordController.text;
       try {
         await authService.login(email, password);
+        final SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('is_logged_in', true);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text("Login Successful!"),

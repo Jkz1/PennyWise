@@ -85,7 +85,7 @@ class WalletPage extends ConsumerWidget {
             onTransfer: () {
               walletsAsync.when(
                 data: (wallets) {
-                  if (wallets.isEmpty) {
+                  if (wallets.isEmpty || wallets.every((w) => w['isDeleted'])) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text(
@@ -132,7 +132,7 @@ class WalletPage extends ConsumerWidget {
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (err, stack) => _buildErrorState(err.toString()),
               data: (wallets) {
-                if (wallets.isEmpty) {
+                if (wallets.isEmpty || wallets.every((w) => w['isDeleted'])) {
                   return _buildEmptyState(isDarkMode, textColor);
                 }
 

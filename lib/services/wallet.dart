@@ -15,6 +15,7 @@ class WalletService {
       'balance': 0.0,
       'colorValue': colorValue,
       'createdAt': FieldValue.serverTimestamp(),
+      'isDeleted': false,
     });
   }
 
@@ -66,6 +67,6 @@ class WalletService {
         .doc(uid)
         .collection('wallets')
         .doc(walletId)
-        .delete();
+        .update({'isDeleted': true});
   }
 }
