@@ -14,6 +14,7 @@ import 'package:penny_wise/modalComponent/quickStatModal.dart';
 import 'package:penny_wise/model/expenseCategory.dart';
 import 'package:penny_wise/provider/darkModeProv.dart';
 import 'package:penny_wise/provider/statProv.dart';
+import 'package:penny_wise/provider/userProv.dart';
 import 'package:penny_wise/provider/wallet.dart';
 import 'package:penny_wise/screens/analytics.dart';
 import 'package:penny_wise/screens/planned.dart';
@@ -35,6 +36,8 @@ class _HomePageState extends ConsumerState<HomePage> {
   CategoryItem selectedCategory = categories_expenses[0];
   int _selectedIndex = 0;
   bool _isBalanceVisible = true;
+
+
 
   void toggleTheme() {
     ref.read(darkmode.notifier).toggle();
@@ -738,6 +741,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   Widget _buildHeader(Color textColor, bool isDarkMode) {
+    final userData = ref.watch(userDataProvider);
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -749,14 +753,22 @@ class _HomePageState extends ConsumerState<HomePage> {
               "Good Morning,",
               style: TextStyle(color: textColor.withOpacity(0.6), fontSize: 16),
             ),
-            Text(
-              "Alex Mason",
-              style: TextStyle(
-                color: textColor,
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
+            userData.when(
+              data: (data) {
+                final userName = data != null ? data['displayName'] ?? 'User' : 'User';
+                return Text(
+                  userName,
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                );
+              },
+              loading: () => const CircularProgressIndicator(),
+              error: (e, _) => const Text("Error loading user"),
             ),
+            
           ],
         ),
       ],

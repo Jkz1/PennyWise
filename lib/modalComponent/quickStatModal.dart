@@ -1,21 +1,51 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:penny_wise/components/smallToggle.dart';
+import 'package:penny_wise/model/expenseCategory.dart';
+import 'package:penny_wise/provider/statProv.dart';
 import 'package:penny_wise/theme.dart';
+import 'package:penny_wise/utils/formatters.dart';
 
-class QuickStat extends StatefulWidget {
+class QuickStat extends ConsumerStatefulWidget {
   final bool isDarkMode;
   const QuickStat({super.key, required this.isDarkMode});
 
   @override
-  State<QuickStat> createState() => _QuickStatState();
+  ConsumerState<QuickStat> createState() => _QuickStatState();
 }
 
-class _QuickStatState extends State<QuickStat> {
+class _QuickStatState extends ConsumerState<QuickStat> {
   bool isWeekly = true;
+  Color _getCategoryColor(String categoryName) {
+    final category = categories_expenses.firstWhere(
+      (c) => c.name == categoryName,
+      orElse: () => categories_income.firstWhere(
+        (c) => c.name == categoryName,
+        orElse: () => CategoryItem("Other", Icons.more_horiz, Colors.grey),
+      ),
+    );
+    return category.color;
+  }
   @override
   Widget build(BuildContext context) {
+    final textColor = FinTrackTheme.getTextColor(widget.isDarkMode);
+
+    // 1. Watch the stats for the current month
+    final now = DateTime.now();
+    final monthlyStats = ref.watch(monthlyIncomeExpensesProvider(now));
+    final weeklyStats = ref.watch(weeklyIncomeExpensesProvider(now));
+
+    final double income = isWeekly ? weeklyStats['totalIncome'] ?? 0.0 : monthlyStats['totalIncome'] ?? 0.0;
+    final double expense = isWeekly ? weeklyStats['totalExpense'] ?? 0.0 : monthlyStats['totalExpense'] ?? 0.0;
+    final Map<String, double> categories = isWeekly ? weeklyStats['expenseCategories'] ?? {} : monthlyStats['expenseCategories'] ?? {};
+
+    // 2. Calculate Burn Rate (Expense as a % of Income)
+    // If income is 0, we set to 1.0 to show a "full" warning bar if there are expenses
+    double burnRate = income > 0
+        ? (expense / income).clamp(0.0, 1.0)
+        : (expense > 0 ? 1.0 : 0.0);
     return StatefulBuilder(
       builder: (context, setSheetState) => BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
@@ -48,7 +78,7 @@ class _QuickStatState extends State<QuickStat> {
                         ),
                       ),
                       Text(
-                        isWeekly ? "Jan 12 - Jan 18" : "January 2024",
+                        isWeekly ? "Current Week" : "Current Month",
                         style: TextStyle(
                           color: FinTrackTheme.getTextColor(
                             widget.isDarkMode,
@@ -91,53 +121,46 @@ class _QuickStatState extends State<QuickStat> {
 
               // 2. DYNAMIC PROGRESS BAR
               _buildStatLabel(
-                isWeekly ? "WEEKLY BUDGET" : "MONTHLY BUDGET",
+                isWeekly ? "WEEKLY CASHFLOW" : "MONTHLY CASHFLOW",
                 FinTrackTheme.getTextColor(widget.isDarkMode),
               ),
               const SizedBox(height: 12),
               _buildProgressBar(
                 context,
-                isWeekly ? 0.65 : 0.42, // Mock percentages for Week vs Month
-                isWeekly ? "\$650.00" : "\$2,100.00",
-                isWeekly ? "\$1,000.00" : "\$5,000.00",
+                // isWeekly ? 0.65 : 0.42, // Mock percentages for Week vs Month
+                burnRate,
+                CurrencyFormatter.format(expense),
+                CurrencyFormatter.format(income),
+                // isWeekly ? "\$650.00" : "\$2,100.00",
+                // isWeekly ? "\$1,000.00" : "\$5,000.00",
                 widget.isDarkMode,
               ),
 
               const SizedBox(height: 40),
 
               // 3. DYNAMIC CATEGORIES
-              _buildStatLabel(
-                "TOP SPENDING",
-                FinTrackTheme.getTextColor(widget.isDarkMode),
-              ),
+              // _buildStatLabel(
+              //   "TOP SPENDING",
+              //   FinTrackTheme.getTextColor(widget.isDarkMode),
+              // ),
+              _buildStatLabel("TOP SPENDING", textColor),
               const SizedBox(height: 16),
-              if (isWeekly) ...[
-                _buildQuickCategoryRow(
-                  "Food",
-                  "\$240.00",
-                  Colors.orangeAccent,
-                  FinTrackTheme.getTextColor(widget.isDarkMode),
-                ),
-                _buildQuickCategoryRow(
-                  "Transport",
-                  "\$120.00",
-                  Colors.blueAccent,
-                  FinTrackTheme.getTextColor(widget.isDarkMode),
-                ),
-              ] else ...[
-                _buildQuickCategoryRow(
-                  "Rent",
-                  "\$1,200.00",
-                  Colors.purpleAccent,
-                  FinTrackTheme.getTextColor(widget.isDarkMode),
-                ),
-                _buildQuickCategoryRow(
-                  "Groceries",
-                  "\$450.00",
-                  Colors.orangeAccent,
-                  FinTrackTheme.getTextColor(widget.isDarkMode),
-                ),
-              ],
+
+              if (categories.isEmpty)
+                Text(
+                  "No transactions yet",
+                  style: TextStyle(color: textColor.withOpacity(0.3)),
+                )
+              else
+                ...categories.entries.take(3).map((entry) {
+                  return _buildQuickCategoryRow(
+                    entry.key,
+                    CurrencyFormatter.format(entry.value),
+                    _getCategoryColor(entry.key), // Helper to pick a color
+                    textColor,
+                  );
+                }),
+              const SizedBox(height: 16),
 
               const Spacer(),
               const SizedBox(height: 16),
@@ -208,78 +231,42 @@ class _QuickStatState extends State<QuickStat> {
       ),
     );
   }
-
-  Widget _buildProgressBar(
-    BuildContext context,
-    double percentage,
-    String spentAmount,
-    String limitAmount,
-    bool isDarkMode,
-  ) {
-    final textColor = FinTrackTheme.getTextColor(isDarkMode);
-
+Widget _buildProgressBar(BuildContext context, double percentage, String spent, String income, bool isDark) {
+    final textColor = FinTrackTheme.getTextColor(isDark);
     return Column(
       children: [
         Stack(
           children: [
-            // 1. The Background Track
             Container(
               height: 12,
               width: double.infinity,
               decoration: BoxDecoration(
-                color: isDarkMode
-                    ? Colors.white.withOpacity(0.05)
-                    : Colors.black.withOpacity(0.05),
+                color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05),
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
-            // 2. The Active Progress Bar
             AnimatedContainer(
               duration: const Duration(milliseconds: 800),
-              curve: Curves.easeOutCubic,
               height: 12,
-              // Calculate width based on screen width and percentage
               width: (MediaQuery.of(context).size.width - 64) * percentage,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    FinTrackTheme.primaryColor,
+                    percentage > 0.8 ? Colors.redAccent : FinTrackTheme.primaryColor,
                     FinTrackTheme.primaryColor.withOpacity(0.7),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(10),
-                boxShadow: [
-                  BoxShadow(
-                    color: FinTrackTheme.primaryColor.withOpacity(0.3),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
               ),
             ),
           ],
         ),
         const SizedBox(height: 12),
-        // 3. Amount Labels
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              "$spentAmount spent",
-              style: TextStyle(
-                color: textColor,
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
-            ),
-            Text(
-              "Limit: $limitAmount",
-              style: TextStyle(
-                color: textColor.withOpacity(0.4),
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+            Text("$spent spent", style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 13)),
+            Text("Income: $income", style: TextStyle(color: textColor.withOpacity(0.4), fontSize: 12)),
           ],
         ),
       ],
