@@ -17,7 +17,7 @@ class QuickStat extends ConsumerStatefulWidget {
 }
 
 class _QuickStatState extends ConsumerState<QuickStat> {
-  bool isWeekly = true;
+  bool isWeekly = false;
   Color _getCategoryColor(String categoryName) {
     final category = categories_expenses.firstWhere(
       (c) => c.name == categoryName,
@@ -28,19 +28,23 @@ class _QuickStatState extends ConsumerState<QuickStat> {
     );
     return category.color;
   }
+
   @override
   Widget build(BuildContext context) {
     final textColor = FinTrackTheme.getTextColor(widget.isDarkMode);
-
     // 1. Watch the stats for the current month
     final now = DateTime.now();
     final monthlyStats = ref.watch(monthlyIncomeExpensesProvider(now));
     final weeklyStats = ref.watch(weeklyIncomeExpensesProvider(now));
-
-    final double income = isWeekly ? weeklyStats['totalIncome'] ?? 0.0 : monthlyStats['totalIncome'] ?? 0.0;
-    final double expense = isWeekly ? weeklyStats['totalExpense'] ?? 0.0 : monthlyStats['totalExpense'] ?? 0.0;
-    final Map<String, double> categories = isWeekly ? weeklyStats['expenseCategories'] ?? {} : monthlyStats['expenseCategories'] ?? {};
-
+    double income = isWeekly
+        ? weeklyStats['totalIncome'] ?? 0.0
+        : monthlyStats['totalIncome'] ?? 0.0;
+    double expense = isWeekly
+        ? weeklyStats['totalExpense'] ?? 0.0
+        : monthlyStats['totalExpense'] ?? 0.0;
+    Map<String, double> categories = isWeekly
+        ? weeklyStats['expenseCategories'] ?? {}
+        : monthlyStats['expenseCategories'] ?? {};
     // 2. Calculate Burn Rate (Expense as a % of Income)
     // If income is 0, we set to 1.0 to show a "full" warning bar if there are expenses
     double burnRate = income > 0
@@ -103,13 +107,49 @@ class _QuickStatState extends ConsumerState<QuickStat> {
                           label: "Week",
                           isSelected: isWeekly,
                           isDarkMode: widget.isDarkMode,
-                          onTap: () => setSheetState(() => isWeekly = true),
+                          onTap: () => setSheetState(() {
+                            final tes = ref.watch(
+                              weeklyIncomeExpensesProvider(now),
+                            );
+                            
+                            print("Toggle");
+                            print(tes);
+                            
+                            
+                            isWeekly = true;
+                            income = isWeekly
+                                ? weeklyStats['totalIncome'] ?? 0.0
+                                : monthlyStats['totalIncome'] ?? 0.0;
+                            expense = isWeekly
+                                ? weeklyStats['totalExpense'] ?? 0.0
+                                : monthlyStats['totalExpense'] ?? 0.0;
+                            categories = isWeekly
+                                ? weeklyStats['expenseCategories'] ?? {}
+                                : monthlyStats['expenseCategories'] ?? {};
+                          }),
                         ),
                         SmallToggle(
                           label: "Month",
                           isSelected: !isWeekly,
                           isDarkMode: widget.isDarkMode,
-                          onTap: () => setSheetState(() => isWeekly = false),
+                          onTap: () => setSheetState(() {
+                            final tes = ref.watch(
+                              monthlyIncomeExpensesProvider(now),
+                            );
+                            print("Toggle");
+                            print(tes);
+                            
+                            isWeekly = false;
+                            income = isWeekly
+                                ? weeklyStats['totalIncome'] ?? 0.0
+                                : monthlyStats['totalIncome'] ?? 0.0;
+                            expense = isWeekly
+                                ? weeklyStats['totalExpense'] ?? 0.0
+                                : monthlyStats['totalExpense'] ?? 0.0;
+                            categories = isWeekly
+                                ? weeklyStats['expenseCategories'] ?? {}
+                                : monthlyStats['expenseCategories'] ?? {};
+                          }),
                         ),
                       ],
                     ),
@@ -231,7 +271,14 @@ class _QuickStatState extends ConsumerState<QuickStat> {
       ),
     );
   }
-Widget _buildProgressBar(BuildContext context, double percentage, String spent, String income, bool isDark) {
+
+  Widget _buildProgressBar(
+    BuildContext context,
+    double percentage,
+    String spent,
+    String income,
+    bool isDark,
+  ) {
     final textColor = FinTrackTheme.getTextColor(isDark);
     return Column(
       children: [
@@ -252,7 +299,9 @@ Widget _buildProgressBar(BuildContext context, double percentage, String spent, 
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    percentage > 0.8 ? Colors.redAccent : FinTrackTheme.primaryColor,
+                    percentage > 0.8
+                        ? Colors.redAccent
+                        : FinTrackTheme.primaryColor,
                     FinTrackTheme.primaryColor.withOpacity(0.7),
                   ],
                 ),
@@ -265,8 +314,18 @@ Widget _buildProgressBar(BuildContext context, double percentage, String spent, 
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text("$spent spent", style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 13)),
-            Text("Income: $income", style: TextStyle(color: textColor.withOpacity(0.4), fontSize: 12)),
+            Text(
+              "$spent spent",
+              style: TextStyle(
+                color: textColor,
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+              ),
+            ),
+            Text(
+              "Income: $income",
+              style: TextStyle(color: textColor.withOpacity(0.4), fontSize: 12),
+            ),
           ],
         ),
       ],

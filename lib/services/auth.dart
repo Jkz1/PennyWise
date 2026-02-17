@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:penny_wise/services/wallet.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -45,17 +46,8 @@ class AuthService {
           ...userData,
           'createdAt': FieldValue.serverTimestamp(),
         });
-        await _firestore
-            .collection('users')
-            .doc(user.uid)
-            .collection('wallets')
-            .add({
-              'name': 'Main Wallet',
-              'balance': 0,
-              'colorValue':
-                  Colors.blueAccent.value, // Store color as an integer
-              'createdAt': FieldValue.serverTimestamp(),
-            });
+        final ws = WalletService();
+        ws.addWallet('Main Wallet', Colors.blueAccent.value);
         // 3. Save to SharedPreferences
         final SharedPreferences prefs = await SharedPreferences.getInstance();
 

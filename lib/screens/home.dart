@@ -658,6 +658,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // --- HEADER ---
+                          ElevatedButton(onPressed: (){
+                            recordExpense();
+                          }, child: Text("Hai")),
                           _buildHeader(textColor, isDarkMode),
                           const SizedBox(height: 24),
 
@@ -668,10 +671,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                             textColor,
                             isDarkMode,
                           ),
-                          // ElevatedButton(onPressed: () async {
-                          //   Test tes = Test();
-                          //   await tes.checkData();
-                          // }, child: Text("checkdata")),
                           const SizedBox(height: 24),
 
                           // --- QUICK ACTIONS ---
@@ -841,9 +840,9 @@ class _HomePageState extends ConsumerState<HomePage> {
               const SizedBox(height: 20),
               Row(
                 children: [
-                  _buildStatItem(Icons.arrow_upward, "Income", "\$${stats['totalIncome']}"),
+                  _buildStatItem(Icons.arrow_upward, "Income", CurrencyFormatter.format(stats['totalIncome'])),
                   const SizedBox(width: 24),
-                  _buildStatItem(Icons.arrow_downward, "Expenses", "\$${stats['totalExpense']}"),
+                  _buildStatItem(Icons.arrow_downward, "Expenses", CurrencyFormatter.format(stats['totalExpense'])),
                 ],
               ),
             ],

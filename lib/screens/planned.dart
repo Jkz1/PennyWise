@@ -642,16 +642,4 @@ class _PlannedPageState extends State<PlannedPage> {
       ),
     );
   }
-
-  Widget _inputFieldLabel(String label) {
-    return Text(
-      label,
-      style: const TextStyle(
-        color: Colors.grey,
-        fontSize: 10,
-        fontWeight: FontWeight.bold,
-        letterSpacing: 1,
-      ),
-    );
-  }
 }

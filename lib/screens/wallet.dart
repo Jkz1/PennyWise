@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:penny_wise/components/netWorthSummary.dart';
 import 'package:penny_wise/modalComponent/addWalletModal.dart';
 import 'package:penny_wise/modalComponent/transferModal.dart';
@@ -26,36 +25,6 @@ class WalletPage extends ConsumerWidget {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final textColor = FinTrackTheme.getTextColor(isDarkMode);
     final walletService = WalletService(); // Or ref.read(walletServiceProvider)
-    final List<Map<String, dynamic>> _transferHistory = [
-      {
-        "from": "Bank",
-        "to": "Savings",
-        "amount": "500.00",
-        "date": "Today, 10:24 AM",
-        "color": Colors.blueAccent,
-      },
-      {
-        "from": "Cash",
-        "to": "Investment",
-        "amount": "50.00",
-        "date": "Yesterday",
-        "color": Colors.orangeAccent,
-      },
-      {
-        "from": "Cash",
-        "to": "Investment",
-        "amount": "50.00",
-        "date": "Yesterday",
-        "color": Colors.orangeAccent,
-      },
-      {
-        "from": "Cash",
-        "to": "Investment",
-        "amount": "50.00",
-        "date": "Yesterday",
-        "color": Colors.orangeAccent,
-      },
-    ];
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -143,7 +112,9 @@ class WalletPage extends ConsumerWidget {
                   itemCount: wallets.length,
                   itemBuilder: (context, index) {
                     final data = wallets[index];
-
+                    if(data['isDeleted'] == true) {
+                      return const SizedBox.shrink(); // Skip deleted wallets
+                    }
                     return BankCard(
                       name: data['name'] ?? 'Untitled',
                       balance: data['balance'],

@@ -50,14 +50,16 @@ class _ExpenseModalState extends ConsumerState<ExpenseModal> {
       cleanAmount = CurrencyFormatter.getCleanAmount(v);
       print("Clean Amount: $cleanAmount");
       print("Condition 1  : ${cleanAmount > 0}");
-      print("Condition 2  : ${!(cleanAmount > maximumWalletBalance && isExpense && selectedWalletId != "")}");
+      print(
+        "Condition 2  : ${!(cleanAmount > maximumWalletBalance && isExpense && selectedWalletId != "")}",
+      );
       if (cleanAmount > 0 &&
           realTimeCheck == true &&
           !(cleanAmount > maximumWalletBalance &&
               isExpense &&
               selectedWalletId != "")) {
         wrongAmount = false;
-      }else if (realTimeCheck == true && cleanAmount <= 0) {
+      } else if (realTimeCheck == true && cleanAmount <= 0) {
         wrongAmount = true;
       }
     }
@@ -106,7 +108,9 @@ class _ExpenseModalState extends ConsumerState<ExpenseModal> {
             selectedWalletId,
             isExpense,
             cleanAmount,
-            titleController.text.trim() == "" ? isSelected.name : titleController.text.trim(),
+            titleController.text.trim() == ""
+                ? isSelected.name
+                : titleController.text.trim(),
             isSelected.name,
           );
           ScaffoldMessenger.of(context).showSnackBar(
@@ -139,6 +143,10 @@ class _ExpenseModalState extends ConsumerState<ExpenseModal> {
     void _showWalletPicker(BuildContext context, StateSetter setSheetState) {
       walletsAsync.when(
         data: (data) {
+          final wallets = [
+            for (var w in data)
+              if (w['isDeleted'] != true) w,
+          ];
           showModalBottomSheet(
             context: context,
             backgroundColor: Colors.transparent, // Crucial for glass effect
@@ -195,9 +203,9 @@ class _ExpenseModalState extends ConsumerState<ExpenseModal> {
                         Flexible(
                           child: ListView.builder(
                             shrinkWrap: true,
-                            itemCount: data.length,
+                            itemCount: wallets.length,
                             itemBuilder: (context, index) {
-                              final wallet = data[index];
+                              final wallet = wallets[index];
                               return ListTile(
                                 contentPadding: EdgeInsets.zero,
                                 leading: Container(
@@ -656,9 +664,12 @@ class _ExpenseModalState extends ConsumerState<ExpenseModal> {
               Padding(
                 padding: const EdgeInsets.only(top: 16),
                 child: ElevatedButton(
-                  onPressed: isLoading || wrongWallet || wrongAmount ? null : onSaveTransaction,
+                  onPressed: isLoading || wrongWallet || wrongAmount
+                      ? null
+                      : onSaveTransaction,
                   style: ElevatedButton.styleFrom(
-                    disabledBackgroundColor: FinTrackTheme.primaryColor.withOpacity(0.3),
+                    disabledBackgroundColor: FinTrackTheme.primaryColor
+                        .withOpacity(0.3),
                     backgroundColor: FinTrackTheme.primaryColor.withOpacity(
                       isLoading || wrongWallet || wrongAmount ? 0.3 : 1,
                     ),

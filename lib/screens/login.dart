@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:penny_wise/components/backgroundBlob.dart';
 import 'package:penny_wise/components/glassTextField.dart';
-import 'package:penny_wise/provider/counterProv.dart';
 import 'package:penny_wise/provider/darkModeProv.dart';
 import 'package:penny_wise/screens/home.dart';
 import 'package:penny_wise/screens/registration.dart';

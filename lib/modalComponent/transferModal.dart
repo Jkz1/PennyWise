@@ -11,16 +11,16 @@ void showTransferModal(
   dynamic bankData,
 ) {
   // Mock data for available wallets
-  final List<Map<String, dynamic>> wallets = List<Map<String, dynamic>>.from(
-    bankData,
-  );
+  final wallets = [
+  for (var w in bankData)
+    if (w['isDeleted'] != true) w
+];
   int selectedFromIndex = 0;
   int selectedToIndex = 1;
   dynamic cleanAmount = 0;
   final WalletService _ws = WalletService();
   final TextEditingController amountController = TextEditingController();
   void handleTransfer() {
-    // print(bankData);
     try{
     final String toWalletId = wallets[selectedToIndex]['id'];
     final String fromWalletId = wallets[selectedFromIndex]['id'];
@@ -247,7 +247,7 @@ void showTransferModal(
                         onPressed:
                             (cleanAmount == 0 ||
                                 cleanAmount >
-                                    wallets[selectedFromIndex]['balance'])
+                                    wallets[selectedFromIndex]['balance']) || selectedToIndex == selectedFromIndex
                             ? null
                             : () {
                                 handleTransfer();
