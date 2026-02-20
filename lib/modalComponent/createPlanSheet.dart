@@ -31,7 +31,7 @@ void showCreatePlanSheet(
     realTimeValidation = true;
     final ps = PlannedService();
     try{
-      await ps.addPlannedItem(title: _titleController.text, category: selectedCategory.name, amount: cleanAmount, dueDate: _selectedDate!);
+      await ps.addPlannedItem(title: _titleController.text, category: selectedCategory.name, amount: cleanAmount, dueDate: _selectedDate!, isMonthly: isRecurring);
       Navigator.pop(context);
     }
     catch(e) {

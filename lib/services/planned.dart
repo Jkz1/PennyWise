@@ -29,21 +29,70 @@ class PlannedService {
     });
   }
 
-  // READ: Get a stream of maps (includes the document ID)
-  // Stream<List<Map<String, dynamic>>> watchPlannedItems(String uid) {
-  //   return _getRef(uid).snapshots().map((snapshot) {
-  //     return snapshot.docs.map((doc) {
-  //       // We merge the document ID into the map so you can update/delete it later
-  //       final data = doc.data();
-  //       data['id'] = doc.id;
-  //       return data;
-  //     }).toList();
-  //   });
-  // }
+  Future<void> logPlanned({
+    required String plannedId,
+    required String walletId,
+  }) async {
+    final plannedRef = _getRef(uid).doc(plannedId);
+    final walletRef = _db
+        .collection('users')
+        .doc(uid)
+        .collection('wallets')
+        .doc(walletId);
+    final transactionRef = _db
+        .collection('users')
+        .doc(uid)
+        .collection('transactions')
+        .doc();
+
+    await _db.runTransaction((transaction) async {
+      // 1. Get the Planned item data
+      final plannedDoc = await transaction.get(plannedRef);
+      if (!plannedDoc.exists) {
+        throw Exception('Planned item not found');
+      }
+
+      // 2. Get the Wallet data to check/update balance
+      final walletDoc = await transaction.get(walletRef);
+      if (!walletDoc.exists) {
+        throw Exception('Wallet not found');
+      }
+
+      final data = plannedDoc.data()!;
+      final amount = (data['amount'] as num).toDouble(); // Use num for safety
+      final currentBalance =
+          (walletDoc.data()?['balance'] as num?)?.toDouble() ?? 0.0;
+
+      // 3. Update the Wallet Balance
+      transaction.update(walletRef, {'balance': currentBalance - amount});
+
+      // 4. Create the Transaction Log
+      transaction.set(transactionRef, {
+        'title': data['title'],
+        'category': data['category'],
+        'amount': amount,
+        'timestamp': Timestamp.now(),
+        'wallet': walletId,
+        'isPlanned': true,
+        'isExpense': true,
+      });
+
+      // 5. Update Planned Item (Recurring vs One-time)
+      final dueDate = (data['dueDate'] as Timestamp).toDate();
+      if (data['isMonthly'] == true) {
+        transaction.update(plannedRef, {
+          'dueDate': Timestamp.fromDate(
+            DateTime(dueDate.year, dueDate.month + 1, dueDate.day),
+          ),
+        });
+      } else {
+        transaction.update(plannedRef, {'isPay': true});
+      }
+    });
+  }
 
   // UPDATE: Update specific fields
   Future<void> updatePlannedItem(
-    String uid,
     String itemId,
     Map<String, dynamic> updates,
   ) async {
@@ -51,7 +100,7 @@ class PlannedService {
   }
 
   // DELETE: Remove the document
-  Future<void> deletePlannedItem(String uid, String itemId) async {
+  Future<void> deletePlannedItem(String itemId) async {
     await _getRef(uid).doc(itemId).delete();
   }
 }
