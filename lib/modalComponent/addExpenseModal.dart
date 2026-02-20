@@ -48,11 +48,6 @@ class _ExpenseModalState extends ConsumerState<ExpenseModal> {
 
     onAmountChanged(String v) {
       cleanAmount = CurrencyFormatter.getCleanAmount(v);
-      print("Clean Amount: $cleanAmount");
-      print("Condition 1  : ${cleanAmount > 0}");
-      print(
-        "Condition 2  : ${!(cleanAmount > maximumWalletBalance && isExpense && selectedWalletId != "")}",
-      );
       if (cleanAmount > 0 &&
           realTimeCheck == true &&
           !(cleanAmount > maximumWalletBalance &&
@@ -103,7 +98,6 @@ class _ExpenseModalState extends ConsumerState<ExpenseModal> {
           setState(() {
             isLoading = true;
           });
-          print(titleController.text.trim());
           await transactionService.addTransaction(
             selectedWalletId,
             isExpense,
@@ -111,7 +105,7 @@ class _ExpenseModalState extends ConsumerState<ExpenseModal> {
             titleController.text.trim() == ""
                 ? isSelected.name
                 : titleController.text.trim(),
-            isSelected.name,
+            isSelected.name
           );
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

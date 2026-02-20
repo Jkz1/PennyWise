@@ -10,7 +10,9 @@ class TransactionService {
     bool isExpense,
     double amount,
     String title,
-    String category,
+    String category,[
+    bool? isPlanned = false
+    ]
   ) async {
     final walletRef = _db
         .collection('users')
@@ -22,7 +24,6 @@ class TransactionService {
         .doc(uid)
         .collection('transactions')
         .doc();
-
     await _db.runTransaction((transaction) async {
       final walletSnapshot = await transaction.get(walletRef);
 
@@ -41,8 +42,10 @@ class TransactionService {
         'title': title,
         'category': category,
         'amount': amount,
+        'isPlanned': isPlanned,
         'timestamp': FieldValue.serverTimestamp(),
       });
     });
+
   }
 }

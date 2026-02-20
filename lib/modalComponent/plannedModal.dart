@@ -3,21 +3,201 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:penny_wise/components/categoryChip.dart';
+import 'package:penny_wise/modalComponent/createPlanSheet.dart';
 import 'package:penny_wise/components/sheetLabel.dart';
 import 'package:penny_wise/components/smallToggle.dart';
 import 'package:penny_wise/model/expenseCategory.dart';
+import 'package:penny_wise/provider/plannedProv.dart';
+import 'package:penny_wise/provider/wallet.dart';
 import 'package:penny_wise/theme.dart';
+import 'package:penny_wise/utils/formatters.dart';
 
-class PlannedModal extends StatefulWidget {
+class PlannedModal extends ConsumerStatefulWidget {
   const PlannedModal({super.key});
 
   @override
-  State<PlannedModal> createState() => _PlannedModalState();
+  ConsumerState<PlannedModal> createState() => _PlannedModalState();
 }
 
-class _PlannedModalState extends State<PlannedModal> {
+class _PlannedModalState extends ConsumerState<PlannedModal> {
   CategoryItem selectedCategory = categories_expenses[0];
+  void _showWalletPicker(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final textColor = FinTrackTheme.getTextColor(isDarkMode);
+    final walletsAsync = ref.watch(walletListProvider);
+
+    String selectedWalletId = "";
+
+    walletsAsync.when(
+      data: (data) {
+        final wallets = [
+          for (var w in data)
+            if (w['isDeleted'] != true) w,
+        ];
+        // StatefulBuilder(
+        //   builder: (context, setState) {
+        //     return
+
+        //   });
+        showModalBottomSheet(
+          context: context,
+          backgroundColor: Colors.transparent, // Crucial for glass effect
+          builder: (context) {
+            return StatefulBuilder(
+              builder: (context, setState) {
+                return ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(32),
+                  ),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(
+                      sigmaX: 15,
+                      sigmaY: 15,
+                    ), // The "Glass" blur
+                    child: Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        // Use FinTrackTheme glass colors or semi-transparent colors here
+                        color: isDarkMode
+                            ? Colors.black.withOpacity(0.7)
+                            : Colors.white.withOpacity(0.8),
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(32),
+                        ),
+                        border: Border.all(
+                          color: isDarkMode ? Colors.white10 : Colors.black12,
+                        ),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Handle bar for better UX
+                          Container(
+                            width: 40,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: textColor.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          Text(
+                            "Select Source Wallet",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: textColor,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // List of Wallets
+                          Flexible(
+                            child: ListView.builder(
+                              shrinkWrap: true,
+                              itemCount: wallets.length,
+                              itemBuilder: (context, index) {
+                                final wallet = wallets[index];
+                                return ListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  leading: Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: Color(
+                                        wallet['colorValue'],
+                                      ).withOpacity(0.15),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      Icons.account_balance_wallet,
+                                      color: Color(wallet['colorValue']),
+                                      size: 20,
+                                    ),
+                                  ),
+                                  title: Text(
+                                    wallet['name'],
+                                    style: TextStyle(
+                                      color: textColor,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  trailing: selectedWalletId == wallet['id']
+                                      ? const Icon(
+                                          Icons.check_circle,
+                                          color: Colors.blue,
+                                        )
+                                      : null,
+                                  subtitle: Text(
+                                    CurrencyFormatter.format(wallet['balance']),
+                                    style: TextStyle(
+                                      color: textColor.withOpacity(0.5),
+                                    ),
+                                  ),
+                                  onTap: () {
+                                    // Handle selection logic
+                                    setState(() {
+                                      if (selectedWalletId == wallet['id']) {
+                                        selectedWalletId =
+                                            ""; // Deselect if tapped again
+                                      } else {
+                                        selectedWalletId = wallet['id'];
+                                      }
+                                    });
+                                  },
+                                );
+                              },
+                            ),
+                          ),
+                          ElevatedButton(
+                            onPressed: selectedWalletId == ""
+                                ? null
+                                : () {
+                                    Navigator.pop(context);
+                                  },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: FinTrackTheme.primaryColor
+                                  .withOpacity(0.9),
+                              minimumSize: const Size(double.infinity, 50),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: Text(
+                              "Confirm Log",
+                              style: TextStyle(
+                                color: FinTrackTheme.getTextColor(isDarkMode),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            );
+          },
+        );
+      },
+      error: (error, stackTrace) {
+        return Center(
+          child: Text(
+            "Error loading wallets",
+            style: TextStyle(color: textColor),
+          ),
+        );
+      },
+      loading: () {
+        return const Center(child: CircularProgressIndicator());
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,6 +206,8 @@ class _PlannedModalState extends State<PlannedModal> {
     final textColor = FinTrackTheme.getTextColor(isDarkMode);
     final glassColor = FinTrackTheme.getGlassColor(isDarkMode);
     final glassBorder = FinTrackTheme.getGlassBorder(isDarkMode);
+  
+    final plannedItemAsync = ref.watch(plannedItem);
 
     // Mock data local to the sheet
     final List<Map<String, dynamic>> upcoming = [
@@ -46,271 +228,34 @@ class _PlannedModalState extends State<PlannedModal> {
     final List<Map<String, dynamic>> history = [
       {"title": "Internet Bill", "amount": "60.00", "date": "Paid Jan 12"},
     ];
-    void _showCreatePlanSheet(
-      BuildContext context,
-      bool isDarkMode,
-      Color textColor,
-    ) {
-      // Local state for the plan creator
-      bool isRecurring = true;
+    
 
-      showModalBottomSheet(
+    Future<bool?> _showDeleteConfirmation(BuildContext context, String title) {
+      return showDialog<bool>(
         context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        builder: (context) => StatefulBuilder(
-          builder: (context, setSheetState) {
-            onTapCategory(CategoryItem category) {
-              setSheetState(() {
-                selectedCategory = category;
-              });
-            }
-
-            return BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-              child: Container(
-                height: MediaQuery.of(context).size.height * 0.75,
-                decoration: BoxDecoration(
-                  color: isDarkMode
-                      ? Colors.black.withOpacity(0.7)
-                      : Colors.white.withOpacity(0.8),
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(40),
-                  ),
-                  border: Border.all(color: Colors.white.withOpacity(0.2)),
-                ),
-                padding: const EdgeInsets.all(32),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 1. PREMIUM HEADER & TOGGLE
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: textColor.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          "New Plan",
-                          style: TextStyle(
-                            color: textColor,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        // Natural Toggle for Monthly vs One-time
-                        Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: isDarkMode
-                                ? Colors.white.withOpacity(0.05)
-                                : Colors.black.withOpacity(0.05),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            children: [
-                              SmallToggle(
-                                label: "Monthly",
-                                isSelected: isRecurring,
-                                isDarkMode: isDarkMode,
-                                onTap: () =>
-                                    setSheetState(() => isRecurring = true),
-                              ),
-                              SmallToggle(
-                                label: "Once",
-                                isSelected: !isRecurring,
-                                isDarkMode: isDarkMode,
-                                onTap: () =>
-                                    setSheetState(() => isRecurring = false),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 30),
-
-                    // 2. INTEGRATED TITLE INPUT
-                    SheetLabel(
-                      isDarkMode: isDarkMode,
-                      text: "WHAT ARE WE PLANNING?",
-                    ),
-                    TextField(
-                      style: TextStyle(
-                        color: textColor,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: "e.g. Health Insurance",
-                        hintStyle: TextStyle(
-                          color: textColor.withOpacity(0.15),
-                        ),
-                        enabledBorder: UnderlineInputBorder(
-                          borderSide: BorderSide(
-                            color: textColor.withOpacity(0.1),
-                          ),
-                        ),
-                        focusedBorder: InputBorder.none,
-                      ),
-                    ),
-
-                    const SizedBox(height: 32),
-
-                    // 3. AMOUNT & DATE (Side by Side)
-                    Row(
-                      children: [
-                        Expanded(
-                          flex: 2,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              SheetLabel(
-                                isDarkMode: isDarkMode,
-                                text: "AMOUNT",
-                              ),
-                              TextField(
-                                keyboardType: TextInputType.number,
-                                style: TextStyle(
-                                  color: FinTrackTheme.primaryColor,
-                                  fontSize: 32,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                decoration: InputDecoration(
-                                  prefixText: "\$ ",
-                                  prefixStyle: TextStyle(
-                                    color: FinTrackTheme.primaryColor
-                                        .withOpacity(0.5),
-                                    fontSize: 20,
-                                  ),
-                                  border: InputBorder.none,
-                                  hintText: "0.00",
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 20),
-                        Expanded(
-                          flex: 2,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              SheetLabel(
-                                isDarkMode: isDarkMode,
-                                text: "DUE DATE",
-                              ),
-                              const SizedBox(height: 8),
-                              GestureDetector(
-                                onTap: () {}, // Trigger Date Picker
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 12,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    border: Border(
-                                      bottom: BorderSide(
-                                        color: textColor.withOpacity(0.1),
-                                      ),
-                                    ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Icons.calendar_month_rounded,
-                                        size: 18,
-                                        color: textColor.withOpacity(0.5),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        "Select Date",
-                                        style: TextStyle(
-                                          color: textColor,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 32),
-
-                    // 4. CATEGORY SELECTOR (Using your new Animated Chip style)
-                    SheetLabel(isDarkMode: isDarkMode, text: "CATEGORY"),
-                    const SizedBox(height: 16),
-                    Wrap(
-                      spacing: 12,
-                      runSpacing: 12,
-                      children: [
-                        Categorychip(
-                          selectedCategory: selectedCategory,
-                          val: categories_expenses[0],
-                          isDarkMode: isDarkMode,
-                          onTap: onTapCategory,
-                        ),
-                        Categorychip(
-                          selectedCategory: selectedCategory,
-                          val: categories_expenses[1],
-                          isDarkMode: isDarkMode,
-                          onTap: onTapCategory,
-                        ),
-                        Categorychip(
-                          selectedCategory: selectedCategory,
-                          val: categories_expenses[2],
-                          isDarkMode: isDarkMode,
-                          onTap: onTapCategory,
-                        ),
-                        Categorychip(
-                          selectedCategory: selectedCategory,
-                          val: categories_expenses[3],
-                          isDarkMode: isDarkMode,
-                          onTap: onTapCategory,
-                        ),
-                      ],
-                    ),
-
-                    const Spacer(),
-
-                    // 5. ACTION BUTTON
-                    ElevatedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: FinTrackTheme.primaryColor,
-                        minimumSize: const Size(double.infinity, 64),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: const Text(
-                        "CREATE PLAN",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1.1,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+        builder: (context) => AlertDialog(
+          backgroundColor: Colors.grey[900],
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Text("Delete Plan?", style: TextStyle(color: Colors.white)),
+          content: Text(
+            "Are you sure you want to remove '$title'?",
+            style: TextStyle(color: Colors.white70),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text("CANCEL", style: TextStyle(color: Colors.grey)),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text(
+                "DELETE",
+                style: TextStyle(color: Colors.redAccent),
               ),
-            );
-          },
+            ),
+          ],
         ),
       );
     }
@@ -356,8 +301,9 @@ class _PlannedModalState extends State<PlannedModal> {
                   ),
                 ),
                 IconButton(
-                  onPressed: () =>
-                      _showCreatePlanSheet(context, isDarkMode, textColor),
+                  onPressed: (){
+                    showCreatePlanSheet(context, isDarkMode, textColor);
+                  },
                   icon: Icon(
                     Icons.add_circle_outline_rounded,
                     color: FinTrackTheme.primaryColor,
@@ -378,13 +324,56 @@ class _PlannedModalState extends State<PlannedModal> {
                   children: [
                     SheetLabel(isDarkMode: isDarkMode, text: "UPCOMING"),
                     const SizedBox(height: 16),
-                    ...upcoming.map(
-                      (item) => _buildModalPlannedCard(
-                        item,
-                        glassColor,
-                        glassBorder,
-                        textColor,
+                    plannedItemAsync.when(
+                      data: (data) {
+                        print(data);
+                        return Column(
+                          children: 
+                        data.map((item) => 
+                        Slidable(
+                        key: ValueKey(item['title']),
+
+                        endActionPane: ActionPane(
+                          extentRatio: 0.15,
+                          motion: const DrawerMotion(),
+                          children: [
+                            SlidableAction(
+                              onPressed: (context) {
+                                _showDeleteConfirmation(context, item['title']);
+                              },
+                              backgroundColor: Colors.transparent,
+                              foregroundColor: Colors.redAccent.withOpacity(
+                                0.5,
+                              ),
+                              icon: Icons.delete_outline_rounded,
+                              label: 'Delete',
+                              borderRadius: BorderRadius.circular(
+                                20,
+                              ), // Matches your card shape
+                            ),
+                          ],
+                        ),
+
+                        child: _buildModalPlannedCard(
+                          item,
+                          glassColor,
+                          glassBorder,
+                          textColor,
+                        ),
                       ),
+                        ).toList()
+                          
+                        );
+                      }
+                    , error: (error, stackTrace) {
+                      return Center(
+                        child: Text(
+                          "Error loading planned items",
+                          style: TextStyle(color: textColor),
+                        ),
+                      );
+                    }
+                    , loading: () => const Center(child: CircularProgressIndicator())
                     ),
 
                     const SizedBox(height: 32),
@@ -500,7 +489,7 @@ class _PlannedModalState extends State<PlannedModal> {
                   ),
                 ),
                 Text(
-                  item['date'],
+                  "Due ${item['dueDate']}",
                   style: const TextStyle(
                     color: Colors.orangeAccent,
                     fontSize: 11,
@@ -514,7 +503,7 @@ class _PlannedModalState extends State<PlannedModal> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                "\$${item['amount']}",
+                CurrencyFormatter.format(item['amount']),
                 style: TextStyle(
                   color: textColor,
                   fontWeight: FontWeight.bold,
@@ -522,12 +511,17 @@ class _PlannedModalState extends State<PlannedModal> {
                 ),
               ),
               const SizedBox(height: 4),
-              Text(
-                "LOG NOW",
-                style: TextStyle(
-                  color: FinTrackTheme.primaryColor,
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
+              GestureDetector(
+                onTap: () {
+                  _showWalletPicker(context);
+                },
+                child: Text(
+                  "LOG NOW",
+                  style: TextStyle(
+                    color: FinTrackTheme.primaryColor,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
