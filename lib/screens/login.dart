@@ -255,20 +255,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
                               const SizedBox(height: 12),
 
-                              Align(
-                                alignment: Alignment.centerRight,
-                                child: TextButton(
-                                  onPressed: () {},
-                                  child: Text(
-                                    "Forgot Password?",
-                                    style: TextStyle(
-                                      color: isDarkMode
-                                          ? secondaryColor
-                                          : primaryColor,
-                                    ),
-                                  ),
-                                ),
-                              ),
 
                               const SizedBox(height: 24),
 
