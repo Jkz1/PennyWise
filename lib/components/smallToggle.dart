@@ -31,6 +31,6 @@ class SmallToggle extends StatelessWidget {
           ),
         ),
       ),
-    );;
+    );
   }
 }

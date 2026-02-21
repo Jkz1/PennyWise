@@ -17,7 +17,6 @@ import 'package:penny_wise/provider/statProv.dart';
 import 'package:penny_wise/provider/userProv.dart';
 import 'package:penny_wise/provider/wallet.dart';
 import 'package:penny_wise/screens/analytics.dart';
-import 'package:penny_wise/screens/planned.dart';
 import 'package:penny_wise/screens/profile.dart';
 import 'package:penny_wise/screens/wallet.dart';
 import 'package:penny_wise/services/test.dart';

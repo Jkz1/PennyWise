@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+// ignore: unused_import
 import 'package:penny_wise/model/expenseCategory.dart';
 
 class PlannedService {
@@ -64,6 +65,9 @@ class PlannedService {
           (walletDoc.data()?['balance'] as num?)?.toDouble() ?? 0.0;
 
       // 3. Update the Wallet Balance
+      if(currentBalance < amount) {
+        throw Exception('Insufficient balance in wallet');
+      }
       transaction.update(walletRef, {'balance': currentBalance - amount});
 
       // 4. Create the Transaction Log
@@ -71,7 +75,7 @@ class PlannedService {
         'title': data['title'],
         'category': data['category'],
         'amount': amount,
-        'timestamp': Timestamp.now(),
+        'timestamp': FieldValue.serverTimestamp(),
         'wallet': walletId,
         'isPlanned': true,
         'isExpense': true,

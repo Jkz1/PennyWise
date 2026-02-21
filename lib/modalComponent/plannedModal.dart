@@ -2,16 +2,13 @@
 
 import 'dart:ui';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:intl/intl.dart';
-import 'package:penny_wise/components/categoryChip.dart';
 import 'package:penny_wise/modalComponent/createPlanSheet.dart';
 import 'package:penny_wise/components/sheetLabel.dart';
-import 'package:penny_wise/components/smallToggle.dart';
 import 'package:penny_wise/model/expenseCategory.dart';
 import 'package:penny_wise/provider/plannedProv.dart';
 import 'package:penny_wise/provider/wallet.dart';
@@ -29,16 +26,31 @@ class PlannedModal extends ConsumerStatefulWidget {
 
 class _PlannedModalState extends ConsumerState<PlannedModal> {
   CategoryItem selectedCategory = categories_expenses[0];
-  void _showWalletPicker(BuildContext context, String plannedId) {
+  void _showWalletPicker(
+    BuildContext context,
+    String plannedId,
+    dynamic amount,
+  ) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final textColor = FinTrackTheme.getTextColor(isDarkMode);
     final walletsAsync = ref.watch(walletListProvider);
 
     String selectedWalletId = "";
-    
-    handlLog ()async{
+    dynamic walletAmount = 0.0;
+
+    handlLog() async {
       final ps = PlannedService();
-      try{
+      try {
+        if (walletAmount < amount) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("Selected wallet doesn't have enough balance!"),
+              backgroundColor: Colors.redAccent,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          return;
+        }
         await ps.logPlanned(plannedId: plannedId, walletId: selectedWalletId);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -47,17 +59,15 @@ class _PlannedModalState extends ConsumerState<PlannedModal> {
             behavior: SnackBarBehavior.floating,
           ),
         );
-      }
-      catch(e) {
+      } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Failed to log: $e"),
+            content: Text("Failed to log: ${e.toString()}"),
             backgroundColor: Colors.redAccent,
             behavior: SnackBarBehavior.floating,
           ),
         );
-      }
-      finally {
+      } finally {
         Navigator.pop(context); // Close the wallet picker
         Navigator.pop(context); // Close the planned modal
       }
@@ -167,10 +177,11 @@ class _PlannedModalState extends ConsumerState<PlannedModal> {
                                     // Handle selection logic
                                     setState(() {
                                       if (selectedWalletId == wallet['id']) {
-                                        selectedWalletId =
-                                            ""; // Deselect if tapped again
+                                        selectedWalletId = "";
+                                        walletAmount = 0.0;
                                       } else {
                                         selectedWalletId = wallet['id'];
+                                        walletAmount = wallet['balance'];
                                       }
                                     });
                                   },
@@ -179,9 +190,7 @@ class _PlannedModalState extends ConsumerState<PlannedModal> {
                             ),
                           ),
                           ElevatedButton(
-                            onPressed: selectedWalletId == ""
-                                ? null
-                                : handlLog,
+                            onPressed: selectedWalletId == "" ? null : handlLog,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: FinTrackTheme.primaryColor
                                   .withOpacity(0.9),
@@ -220,6 +229,68 @@ class _PlannedModalState extends ConsumerState<PlannedModal> {
       loading: () {
         return const Center(child: CircularProgressIndicator());
       },
+    );
+  }
+
+  Widget _buildEmptyState(Color textColor) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.event_note_rounded,
+              size: 54,
+              color: textColor.withOpacity(0.2),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "No planned items yet",
+              style: TextStyle(
+                color: textColor.withOpacity(0.6),
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            Text(
+              "Tap the + button to get started.",
+              style: TextStyle(color: textColor.withOpacity(0.4), fontSize: 13),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyHistory(Color textColor) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.receipt_long_rounded,
+              size: 54,
+              color: textColor.withOpacity(0.2),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "No recent payments logged",
+              style: TextStyle(
+                color: textColor.withOpacity(0.6),
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            Text(
+              "Once you log a planned payment, it will appear here.",
+              style: TextStyle(color: textColor.withOpacity(0.4), fontSize: 13),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -350,47 +421,52 @@ class _PlannedModalState extends ConsumerState<PlannedModal> {
                     const SizedBox(height: 16),
                     plannedItemAsync.when(
                       data: (data) {
+                        final filteredData = data
+                            .where((item) => item['isPay'] != true)
+                            .toList();
+
+                        if (filteredData.isEmpty) {
+                          return _buildEmptyState(
+                            textColor,
+                          ); // Your custom empty visual
+                        }
                         return Column(
-                          children: data
-                              .map(
-                                (item) {
-                                  if(item['isPay'] == true) return const SizedBox.shrink();
-                                  return Slidable(
-                                  key: ValueKey(item['title']),
+                          children: filteredData.map((item) {
+                            return Slidable(
+                              key: ValueKey(item['title']),
 
-                                  endActionPane: ActionPane(
-                                    extentRatio: 0.15,
-                                    motion: const DrawerMotion(),
-                                    children: [
-                                      SlidableAction(
-                                        onPressed: (context) {
-                                          _showDeleteConfirmation(
-                                            context,
-                                            item['title'],
-                                            item['id'],
-                                          );
-                                        },
-                                        backgroundColor: Colors.transparent,
-                                        foregroundColor: Colors.redAccent
-                                            .withOpacity(0.5),
-                                        icon: Icons.delete_outline_rounded,
-                                        label: 'Delete',
-                                        borderRadius: BorderRadius.circular(
-                                          20,
-                                        ), // Matches your card shape
-                                      ),
-                                    ],
+                              endActionPane: ActionPane(
+                                extentRatio: 0.15,
+                                motion: const DrawerMotion(),
+                                children: [
+                                  SlidableAction(
+                                    onPressed: (context) {
+                                      _showDeleteConfirmation(
+                                        context,
+                                        item['title'],
+                                        item['id'],
+                                      );
+                                    },
+                                    backgroundColor: Colors.transparent,
+                                    foregroundColor: Colors.redAccent
+                                        .withOpacity(0.5),
+                                    icon: Icons.delete_outline_rounded,
+                                    label: 'Delete',
+                                    borderRadius: BorderRadius.circular(
+                                      20,
+                                    ), // Matches your card shape
                                   ),
+                                ],
+                              ),
 
-                                  child: _buildModalPlannedCard(
-                                    item,
-                                    glassColor,
-                                    glassBorder,
-                                    textColor,
-                                  ),
-                                );},
-                              )
-                              .toList(),
+                              child: _buildModalPlannedCard(
+                                item,
+                                glassColor,
+                                glassBorder,
+                                textColor,
+                              ),
+                            );
+                          }).toList(),
                         );
                       },
                       error: (error, stackTrace) {
@@ -411,20 +487,22 @@ class _PlannedModalState extends ConsumerState<PlannedModal> {
                       text: "RECENTLY SETTLED",
                     ),
                     const SizedBox(height: 16),
-                    ...plannedHistoryAsync.map(
-                      (item) => _buildModalHistoryItem(
-                        item,
-                        glassColor,
-                        glassBorder,
-                        textColor,
+                    if (plannedHistoryAsync.isEmpty)
+                      _buildEmptyHistory(textColor)
+                    else
+                      ...plannedHistoryAsync.map(
+                        (item) => _buildModalHistoryItem(
+                          item,
+                          glassColor,
+                          glassBorder,
+                          textColor,
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),
             ),
 
-            // 3. ACTION BUTTON (Optional: Link to full audit/calendar)
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () => Navigator.pop(context),
@@ -450,69 +528,72 @@ class _PlannedModalState extends ConsumerState<PlannedModal> {
     );
   }
 
-Widget _buildModalHistoryItem(
-  Map<String, dynamic> item,
-  Color glassColor,
-  Color glassBorder,
-  Color textColor,
-) {
-  // 1. Convert Timestamp to formatted String
-  final dynamic timestamp = item['timestamp'];
-  // Default to now
-  DateTime formattedDate = DateFormat('HH:mm dd/MM/yyyy').parse(timestamp);
-  final textDate = getRelativeDate(formattedDate);
+  Widget _buildModalHistoryItem(
+    Map<String, dynamic> item,
+    Color glassColor,
+    Color glassBorder,
+    Color textColor,
+  ) {
+    // 1. Convert Timestamp to formatted String
+    final dynamic timestamp = item['timestamp'];
+    // Default to now
+    DateTime formattedDate = DateFormat('HH:mm dd/MM/yyyy').parse(timestamp);
+    final textDate = getRelativeDate(formattedDate);
 
-
-  return Opacity(
-    opacity: 0.7, // Slightly increased for better readability
-    child: Padding(
-      padding: const EdgeInsets.only(bottom: 16, left: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.check_circle_rounded,
-            color: FinTrackTheme.primaryColor.withOpacity(0.8),
-            size: 18,
-          ),
-          const SizedBox(width: 12),
-          Expanded( // Added Expanded to handle long titles
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item['title'],
-                  style: TextStyle(
-                    color: textColor, 
-                    fontSize: 13, 
-                    fontWeight: FontWeight.w600
-                  ),
-                ),
-                Text(
-                  textDate,
-                  style: TextStyle(
-                    color: textColor.withOpacity(0.5), 
-                    fontSize: 10
-                  ),
-                ),
-              ],
+    return Opacity(
+      opacity: 0.7, // Slightly increased for better readability
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 16, left: 4),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.check_circle_rounded,
+              color: FinTrackTheme.primaryColor.withOpacity(0.8),
+              size: 18,
             ),
-          ),
-          Text(
-            CurrencyFormatter.format(item['amount']), // Consistent with your other widget
-            style: TextStyle(
-              color: textColor,
-              fontSize: 13,
-              fontFamily: 'monospace', // Gives a nice financial look
-              fontWeight: FontWeight.bold,
+            const SizedBox(width: 12),
+            Expanded(
+              // Added Expanded to handle long titles
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item['title'],
+                    style: TextStyle(
+                      color: textColor,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    textDate,
+                    style: TextStyle(
+                      color: textColor.withOpacity(0.5),
+                      fontSize: 10,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+            Text(
+              CurrencyFormatter.format(
+                item['amount'],
+              ), // Consistent with your other widget
+              style: TextStyle(
+                color: textColor,
+                fontSize: 13,
+                fontFamily: 'monospace', // Gives a nice financial look
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
       ),
-    ),
-  );
-}
-Widget _buildModalPlannedCard(
+    );
+  }
+
+  Widget _buildModalPlannedCard(
     Map<String, dynamic> item,
     Color glassColor,
     Color glassBorder,
@@ -559,10 +640,13 @@ Widget _buildModalPlannedCard(
                     const SizedBox(width: 8),
                     // Frequency Badge
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
-                        color: isMonthly 
-                            ? Colors.blue.withOpacity(0.2) 
+                        color: isMonthly
+                            ? Colors.blue.withOpacity(0.2)
                             : Colors.grey.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -594,7 +678,7 @@ Widget _buildModalPlannedCard(
               const SizedBox(height: 4),
               GestureDetector(
                 onTap: () {
-                  _showWalletPicker(context, item['id']);
+                  _showWalletPicker(context, item['id'], item['amount']);
                 },
                 child: Text(
                   "LOG NOW",

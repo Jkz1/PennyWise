@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:penny_wise/firebaseUtils/login.dart';
 import 'package:penny_wise/provider/userProv.dart';
+import 'package:penny_wise/screens/login.dart';
+import 'package:penny_wise/services/auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../theme.dart';
 
 class ProfilePage extends ConsumerStatefulWidget {
@@ -17,6 +21,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final textColor = FinTrackTheme.getTextColor(isDarkMode);
+    final as = AuthService();
 
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
@@ -94,7 +99,15 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           // 3. LOGOUT BUTTON
           const SizedBox(height: 20),
           TextButton(
-            onPressed: () {},
+            onPressed: () async{
+              await as.signOut();
+              final shared = await SharedPreferences.getInstance();
+              await shared.clear();
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginPage()),
+              );
+            },
             child: const Text(
               "Logout",
               style: TextStyle(
