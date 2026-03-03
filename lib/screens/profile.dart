@@ -1,11 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:penny_wise/firebaseUtils/login.dart';
-import 'package:penny_wise/provider/darkModeProv.dart';
-import 'package:penny_wise/provider/plannedProv.dart';
-import 'package:penny_wise/provider/statProv.dart';
 import 'package:penny_wise/provider/userProv.dart';
-import 'package:penny_wise/provider/wallet.dart';
 import 'package:penny_wise/screens/login.dart';
 import 'package:penny_wise/services/auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';

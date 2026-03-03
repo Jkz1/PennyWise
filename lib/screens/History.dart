@@ -3,12 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:penny_wise/components/MultiChip.dart';
 import 'package:penny_wise/components/backgroundBlob.dart';
-import 'package:penny_wise/components/categoryChip.dart'; // Your custom chip
+
 import 'package:penny_wise/components/transactionHistory.dart';
-import 'package:penny_wise/model/expenseCategory.dart'; // Assuming categories are here
+import 'package:penny_wise/model/expenseCategory.dart';
 import 'package:penny_wise/provider/wallet.dart';
 import 'package:penny_wise/theme.dart';
-import 'package:penny_wise/utils/formatters.dart';
 import 'package:intl/intl.dart';
 
 class HistoryPage extends ConsumerStatefulWidget {
@@ -19,16 +18,14 @@ class HistoryPage extends ConsumerStatefulWidget {
 }
 
 class _HistoryPageState extends ConsumerState<HistoryPage> {
-  // Filter States
   DateTimeRange? selectedDateRange;
   List<String> selectedCategories = [];
-  bool? filterIsExpense; // null = All, true = Expense, false = Income
+  bool? filterIsExpense;
 
-  // Dynamic Category Getter
   List<CategoryItem> get availableCategories {
     if (filterIsExpense == true) return categories_expenses;
     if (filterIsExpense == false) return categories_income;
-    // If "All", combine both lists for the filter options
+
     return [...categories_expenses, ...categories_income];
   }
 
@@ -61,7 +58,6 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 1. Header
                 Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 20,
@@ -83,12 +79,10 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                   ),
                 ),
 
-                // 2. Filter Bar (Chips)
                 _buildFilterChips(isDarkMode, textColor),
 
                 const SizedBox(height: 10),
 
-                // 3. Transactions List
                 Expanded(
                   child: transactionsAsync.when(
                     data: (transactions) {
@@ -119,15 +113,12 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
     );
   }
 
-  // --- MODAL TRIGGERS ---
-
   void _showCategoryPicker(bool isDarkMode, Color textColor) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (context) => _FilterModalWrapper(
-        // The main modal title adjusts based on selection
         title: filterIsExpense == null
             ? "All Categories"
             : (filterIsExpense! ? "Expense Categories" : "Income Categories"),
@@ -138,62 +129,59 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
             return Column(
               children: [
                 SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // 1. SHOW EXPENSE SECTION
-                        // (Visible if Type is 'All' or 'Expense')
-                        if (filterIsExpense == null || filterIsExpense == true) ...[
-                          _buildSectionHeader("EXPENSES", textColor),
-                          const SizedBox(height: 12),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 10,
-                            children: categories_expenses.map((cat) {
-                              return MultiChip(
-                                selectedCategories: selectedCategories,
-                                val: cat,
-                                isDarkMode: isDarkMode,
-                                onTap: (clickedCat) {
-                                  setModalState(() {
-                                    _toggleCategory(clickedCat.name);
-                                  });
-                                  setState(() {});
-                                },
-                              );
-                            }).toList(),
-                          ),
-                          if (filterIsExpense == null) const SizedBox(height: 24),
-                        ],
-                
-                        // 2. SHOW INCOME SECTION
-                        // (Visible if Type is 'All' or 'Income')
-                        if (filterIsExpense == null ||
-                            filterIsExpense == false) ...[
-                          _buildSectionHeader("INCOME", textColor),
-                          const SizedBox(height: 12),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 10,
-                            children: categories_income.map((cat) {
-                              return MultiChip(
-                                selectedCategories: selectedCategories,
-                                val: cat,
-                                isDarkMode: isDarkMode,
-                                onTap: (clickedCat) {
-                                  setModalState(() {
-                                    _toggleCategory(clickedCat.name);
-                                  });
-                                  setState(() {});
-                                },
-                              );
-                            }).toList(),
-                          ),
-                        ],
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (filterIsExpense == null ||
+                          filterIsExpense == true) ...[
+                        _buildSectionHeader("EXPENSES", textColor),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 10,
+                          children: categories_expenses.map((cat) {
+                            return MultiChip(
+                              selectedCategories: selectedCategories,
+                              val: cat,
+                              isDarkMode: isDarkMode,
+                              onTap: (clickedCat) {
+                                setModalState(() {
+                                  _toggleCategory(clickedCat.name);
+                                });
+                                setState(() {});
+                              },
+                            );
+                          }).toList(),
+                        ),
+                        if (filterIsExpense == null) const SizedBox(height: 24),
                       ],
-                    )
+
+                      if (filterIsExpense == null ||
+                          filterIsExpense == false) ...[
+                        _buildSectionHeader("INCOME", textColor),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 10,
+                          children: categories_income.map((cat) {
+                            return MultiChip(
+                              selectedCategories: selectedCategories,
+                              val: cat,
+                              isDarkMode: isDarkMode,
+                              onTap: (clickedCat) {
+                                setModalState(() {
+                                  _toggleCategory(clickedCat.name);
+                                });
+                                setState(() {});
+                              },
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
-                SizedBox(height: 40,)
+                SizedBox(height: 40),
               ],
             );
           },
@@ -202,7 +190,6 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
     );
   }
 
-  // Helper to handle the toggle logic cleanly
   void _toggleCategory(String name) {
     if (selectedCategories.contains(name)) {
       selectedCategories.remove(name);
@@ -211,7 +198,6 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
     }
   }
 
-  // Helper for the small overline headers inside the modal
   Widget _buildSectionHeader(String title, Color textColor) {
     return Text(
       title,
@@ -223,73 +209,76 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
       ),
     );
   }
-  
-void _showTypePicker(bool isDarkMode, Color textColor) {
-  showModalBottomSheet(
-    context: context,
-    backgroundColor: Colors.transparent,
-    // This allows us to position it more freely
-    builder: (context) => Center(
-      child: _FilterModalWrapper(
-        title: "Transaction Type",
-        isDarkMode: isDarkMode,
-        textColor: textColor,
-        // Shrink the modal so it doesn't span the whole width
-        margin: const EdgeInsets.symmetric(horizontal: 40), 
-        child: Container(
-          padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            color: isDarkMode ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildTypeOption("All Transactions", null, isDarkMode),
-              const SizedBox(height: 4),
-              _buildTypeOption("Expenses", true, isDarkMode),
-              const SizedBox(height: 4),
-              _buildTypeOption("Income", false, isDarkMode),
-            ],
-          ),
-        ),
-      ),
-    ),
-  );
-}
 
-Widget _buildTypeOption(String label, bool? type, bool isDarkMode) {
-  bool isSelected = filterIsExpense == type;
-  return GestureDetector(
-    onTap: () {
-      setState(() {
-        filterIsExpense = type;
-        selectedCategories.clear();
-      });
-      Navigator.pop(context);
-    },
-    child: AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      decoration: BoxDecoration(
-        color: isSelected ? FinTrackTheme.primaryColor : Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Center(
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.white : (isDarkMode ? Colors.white70 : Colors.black87),
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-            fontSize: 14,
+  void _showTypePicker(bool isDarkMode, Color textColor) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+
+      builder: (context) => Center(
+        child: _FilterModalWrapper(
+          title: "Transaction Type",
+          isDarkMode: isDarkMode,
+          textColor: textColor,
+
+          margin: const EdgeInsets.symmetric(horizontal: 40),
+          child: Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: isDarkMode
+                  ? Colors.white.withOpacity(0.05)
+                  : Colors.black.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildTypeOption("All Transactions", null, isDarkMode),
+                const SizedBox(height: 4),
+                _buildTypeOption("Expenses", true, isDarkMode),
+                const SizedBox(height: 4),
+                _buildTypeOption("Income", false, isDarkMode),
+              ],
+            ),
           ),
         ),
       ),
-    ),
-  );
-}
-  // --- LOGIC ---
+    );
+  }
+
+  Widget _buildTypeOption(String label, bool? type, bool isDarkMode) {
+    bool isSelected = filterIsExpense == type;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          filterIsExpense = type;
+          selectedCategories.clear();
+        });
+        Navigator.pop(context);
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: isSelected ? FinTrackTheme.primaryColor : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: TextStyle(
+              color: isSelected
+                  ? Colors.white
+                  : (isDarkMode ? Colors.white70 : Colors.black87),
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+              fontSize: 14,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   List<Map<String, dynamic>> _applyFilters(List<Map<String, dynamic>> list) {
     return list.where((item) {
@@ -300,8 +289,8 @@ Widget _buildTypeOption(String label, bool? type, bool isDarkMode) {
         return false;
       if (selectedDateRange != null) {
         final dynamic timestamp = item['timestamp'];
-    // Default to now
-    DateTime txDate = DateFormat('HH:mm dd/MM/yyyy').parse(timestamp);
+
+        DateTime txDate = DateFormat('HH:mm dd/MM/yyyy').parse(timestamp);
         if (txDate.isBefore(selectedDateRange!.start) ||
             txDate.isAfter(selectedDateRange!.end.add(const Duration(days: 1))))
           return false;
@@ -309,8 +298,6 @@ Widget _buildTypeOption(String label, bool? type, bool isDarkMode) {
       return true;
     }).toList();
   }
-
-  // --- UI HELPER COMPONENTS ---
 
   Widget _buildFilterChips(bool isDarkMode, Color textColor) {
     return SingleChildScrollView(
@@ -394,78 +381,6 @@ Widget _buildTypeOption(String label, bool? type, bool isDarkMode) {
     );
   }
 
-  // Reusing your slimmed item design
-  Widget _buildHistoryItem({
-    required Map<String, dynamic> item,
-    required Color textColor,
-    required Color glassColor,
-    required Color glassBorder,
-  }) {
-    final bool isExpense = item['isExpense'] ?? true;
-    final Color statusColor = isExpense
-        ? Colors.redAccent
-        : FinTrackTheme.primaryColor;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: glassColor,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: glassBorder),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              isExpense
-                  ? Icons.arrow_upward_rounded
-                  : Icons.arrow_downward_rounded,
-              color: statusColor,
-              size: 16,
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item['title'] ?? "Untitled",
-                  style: TextStyle(
-                    color: textColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                ),
-                Text(
-                  "${item['category']} • ${item['walletName']}",
-                  style: TextStyle(
-                    color: textColor.withOpacity(0.4),
-                    fontSize: 11,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Text(
-            "${isExpense ? '-' : '+'} ${CurrencyFormatter.format(item['amount'])}",
-            style: TextStyle(
-              color: isExpense ? textColor : statusColor,
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildBackButton(
     BuildContext context,
     bool isDarkMode,
@@ -498,12 +413,13 @@ Widget _buildTypeOption(String label, bool? type, bool isDarkMode) {
     ),
   );
 }
+
 class _FilterModalWrapper extends StatelessWidget {
   final String title;
   final Widget child;
   final bool isDarkMode;
   final Color textColor;
-  final EdgeInsets? margin; // Added margin property
+  final EdgeInsets? margin;
 
   const _FilterModalWrapper({
     required this.title,
@@ -518,22 +434,23 @@ class _FilterModalWrapper extends StatelessWidget {
     return BackdropFilter(
       filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
       child: Container(
-        margin: margin ?? EdgeInsets.zero, // Use margin to make it "float"
+        margin: margin ?? EdgeInsets.zero,
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
         decoration: BoxDecoration(
-          color: isDarkMode 
-              ? Colors.black.withOpacity(0.7) 
+          color: isDarkMode
+              ? Colors.black.withOpacity(0.7)
               : Colors.white.withOpacity(0.8),
-          borderRadius: BorderRadius.circular(28), // Rounded all around for floating look
+          borderRadius: BorderRadius.circular(28),
           border: Border.all(
-            color: isDarkMode ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05),
+            color: isDarkMode
+                ? Colors.white.withOpacity(0.1)
+                : Colors.black.withOpacity(0.05),
           ),
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.min, // Very important to keep it slim
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Handle bar
             Center(
               child: Container(
                 width: 30,

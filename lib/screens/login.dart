@@ -33,7 +33,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final isDarkMode = ref.watch(darkmode);
 
     final Color primaryColor = FinTrackTheme.primaryColor;
-    final Color secondaryColor = FinTrackTheme.secondaryColor;
     final Color textColor = FinTrackTheme.getTextColor(isDarkMode);
     final Color glassColor = FinTrackTheme.getGlassColor(isDarkMode);
     final Color glassBorder = FinTrackTheme.getGlassBorder(isDarkMode);

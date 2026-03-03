@@ -1,5 +1,3 @@
-// ignore_for_file: unused_element
-
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -105,7 +103,7 @@ class _ExpenseModalState extends ConsumerState<ExpenseModal> {
             titleController.text.trim() == ""
                 ? isSelected.name
                 : titleController.text.trim(),
-            isSelected.name
+            isSelected.name,
           );
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -134,7 +132,7 @@ class _ExpenseModalState extends ConsumerState<ExpenseModal> {
       }
     }
 
-    void _showWalletPicker(BuildContext context, StateSetter setSheetState) {
+    void showWalletPicker(BuildContext context, StateSetter setSheetState) {
       walletsAsync.when(
         data: (data) {
           final wallets = [
@@ -143,21 +141,17 @@ class _ExpenseModalState extends ConsumerState<ExpenseModal> {
           ];
           showModalBottomSheet(
             context: context,
-            backgroundColor: Colors.transparent, // Crucial for glass effect
+            backgroundColor: Colors.transparent,
             builder: (context) {
               return ClipRRect(
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(32),
                 ),
                 child: BackdropFilter(
-                  filter: ImageFilter.blur(
-                    sigmaX: 15,
-                    sigmaY: 15,
-                  ), // The "Glass" blur
+                  filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
                   child: Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      // Use FinTrackTheme glass colors or semi-transparent colors here
                       color: widget.isDarkMode
                           ? Colors.black.withOpacity(0.7)
                           : Colors.white.withOpacity(0.8),
@@ -173,7 +167,6 @@ class _ExpenseModalState extends ConsumerState<ExpenseModal> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Handle bar for better UX
                         Container(
                           width: 40,
                           height: 4,
@@ -193,7 +186,6 @@ class _ExpenseModalState extends ConsumerState<ExpenseModal> {
                         ),
                         const SizedBox(height: 16),
 
-                        // List of Wallets
                         Flexible(
                           child: ListView.builder(
                             shrinkWrap: true,
@@ -230,7 +222,6 @@ class _ExpenseModalState extends ConsumerState<ExpenseModal> {
                                   ),
                                 ),
                                 onTap: () {
-                                  // Handle selection logic
                                   setSheetState(() {
                                     wrongWallet = false;
                                     selectedWalletId = wallet['id'];
@@ -267,115 +258,197 @@ class _ExpenseModalState extends ConsumerState<ExpenseModal> {
       );
     }
 
-    return StatefulBuilder(
-      builder: (BuildContext context, StateSetter setSheetState) => BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+    Widget _buildSheetLabel(String text, Color textColor) {
+      return Text(
+        text,
+        style: TextStyle(
+          color: textColor.withOpacity(0.4),
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 1.2,
+        ),
+      );
+    }
+
+    Widget _buildInlineWalletPicker(
+      Color textColor,
+      StateSetter setSheetState,
+    ) {
+      return InkWell(
+        onTap: () => showWalletPicker(context, setSheetState),
+        borderRadius: BorderRadius.circular(14),
         child: Container(
-          // 1. REDUCED HEIGHT: Matches QuickStat (0.65)
-          height: MediaQuery.of(context).size.height * 0.65,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
             color: widget.isDarkMode
-                ? Colors.black.withOpacity(
-                    0.7,
-                  ) // Darker background for contrast
-                : Colors.white.withOpacity(0.8),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(40)),
+                ? Colors.white.withOpacity(0.04)
+                : Colors.black.withOpacity(0.03),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.white.withOpacity(0.05)),
           ),
-          padding: const EdgeInsets.symmetric(
-            horizontal: 24,
-            vertical: 24,
-          ), // Tighter padding
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
             children: [
-              // 2. HANDLE BAR
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: textColor.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+              Icon(
+                Icons.account_balance_wallet_rounded,
+                color: selectedColorValue == 0
+                    ? textColor.withOpacity(0.3)
+                    : Color(selectedColorValue),
+                size: 18,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                selectedWalletName == "" ? "Select Wallet" : selectedWalletName,
+                style: TextStyle(
+                  color: textColor,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-              const SizedBox(height: 20),
-
-              // 3. COMPACT TOGGLE (Matches PlannedModal style)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    "New Transaction",
-                    style: TextStyle(
-                      color: textColor,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: widget.isDarkMode
-                          ? Colors.white.withOpacity(0.05)
-                          : Colors.black.withOpacity(0.05),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        _buildCompactToggle(
-                          "Expense",
-                          isExpense,
-                          () => setSheetState(() => onTapChangeSheet(true)),
-                        ),
-                        _buildCompactToggle(
-                          "Income",
-                          !isExpense,
-                          () => setSheetState(() => onTapChangeSheet(false)),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+              const Spacer(),
+              Icon(
+                Icons.keyboard_arrow_down_rounded,
+                color: textColor.withOpacity(0.3),
               ),
+            ],
+          ),
+        ),
+      );
+    }
 
-              const SizedBox(height: 24),
+    Widget _buildInlineTextField(
+      TextEditingController controller,
+      String hint,
+      Color textColor,
+    ) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        decoration: BoxDecoration(
+          color: widget.isDarkMode
+              ? Colors.white.withOpacity(0.04)
+              : Colors.black.withOpacity(0.03),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: TextField(
+          controller: controller,
+          style: TextStyle(color: textColor, fontSize: 14),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: TextStyle(color: textColor.withOpacity(0.2)),
+            border: InputBorder.none,
+            isDense: true,
+            contentPadding: const EdgeInsets.symmetric(vertical: 12),
+          ),
+        ),
+      );
+    }
 
-              // 4. AMOUNT INPUT (Smaller & Cleaner)
-              Expanded(
+    return StatefulBuilder(
+      builder: (BuildContext context, StateSetter setSheetState) =>
+          BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            child: SafeArea(
+              bottom: true,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: widget.isDarkMode
+                      ? Colors.black.withOpacity(0.8)
+                      : Colors.white.withOpacity(0.9),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(35),
+                  ),
+                  border: Border.all(color: Colors.white.withOpacity(0.1)),
+                ),
+                padding: EdgeInsets.fromLTRB(
+                  24,
+                  12,
+                  24,
+                  MediaQuery.of(context).viewInsets.bottom + 24,
+                ),
                 child: SingleChildScrollView(
-                  physics: BouncingScrollPhysics(),
                   child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Center(
+                        child: Container(
+                          width: 32,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: textColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            "New Transaction",
+                            style: TextStyle(
+                              color: textColor,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.all(3),
+                            decoration: BoxDecoration(
+                              color: widget.isDarkMode
+                                  ? Colors.white.withOpacity(0.05)
+                                  : Colors.black.withOpacity(0.05),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                _buildCompactToggle(
+                                  "Expense",
+                                  isExpense,
+                                  () => setSheetState(
+                                    () => onTapChangeSheet(true),
+                                  ),
+                                ),
+                                _buildCompactToggle(
+                                  "Income",
+                                  !isExpense,
+                                  () => setSheetState(
+                                    () => onTapChangeSheet(false),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 20),
+
                       Center(
                         child: TextField(
                           autofocus: true,
                           controller: amountController,
                           keyboardType: TextInputType.number,
-                          onChanged: (v) {
-                            setSheetState(() {
-                              onAmountChanged(v);
-                            });
-                          },
+                          onChanged: (v) =>
+                              setSheetState(() => onAmountChanged(v)),
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: FinTrackTheme.primaryColor,
-                            fontSize: 40, // Reduced from 48
+                            fontSize: 32,
                             fontWeight: FontWeight.bold,
                           ),
                           decoration: InputDecoration(
                             prefixText: isExpense ? "-" : "+",
                             prefixStyle: TextStyle(
-                              color: textColor.withOpacity(0.5),
-                              fontSize: 28, // Reduced from 32
+                              color: textColor.withOpacity(0.3),
+                              fontSize: 24,
                             ),
                             border: InputBorder.none,
                             hintText: "0.00",
                             hintStyle: TextStyle(
                               color: textColor.withOpacity(0.1),
                             ),
-                            isDense: true, // Removes extra vertical padding
-                            contentPadding: EdgeInsets.zero,
+                            isDense: true,
                           ),
                           inputFormatters: [
                             FilteringTextInputFormatter.digitsOnly,
@@ -383,351 +456,99 @@ class _ExpenseModalState extends ConsumerState<ExpenseModal> {
                           ],
                         ),
                       ),
-                      if (wrongAmount &&
-                          !(cleanAmount > maximumWalletBalance &&
-                              isExpense &&
-                              selectedWalletId != ""))
-                        Padding(
-                          padding: const EdgeInsets.only(top: 12.0, bottom: 12),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 10,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.redAccent.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: Colors.redAccent.withOpacity(0.2),
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.warning_amber_rounded,
-                                  color: Colors.redAccent,
-                                  size: 18,
-                                ),
-                                const SizedBox(width: 10),
-                                const Text(
-                                  "Invalid amount",
-                                  style: TextStyle(
-                                    color: Colors.redAccent,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+
+                      const SizedBox(height: 20),
+
+                      ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxHeight: MediaQuery.of(context).size.height * 0.4,
                         ),
-                      if (cleanAmount > maximumWalletBalance &&
-                          isExpense &&
-                          selectedWalletId != "")
-                        Padding(
-                          padding: const EdgeInsets.only(top: 12.0, bottom: 12),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 10,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.redAccent.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: Colors.redAccent.withOpacity(0.2),
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.warning_amber_rounded,
-                                  color: Colors.redAccent,
-                                  size: 18,
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      const Text(
-                                        "Insufficient funds",
-                                        style: TextStyle(
-                                          color: Colors.redAccent,
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      Text(
-                                        // Showing the Wallet Name and the current balance limit
-                                        "Limit for $selectedWalletName: ${CurrencyFormatter.format(maximumWalletBalance)}",
-                                        style: TextStyle(
-                                          color: Colors.redAccent.withOpacity(
-                                            0.8,
+                        child: SingleChildScrollView(
+                          physics: const BouncingScrollPhysics(),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildSheetLabel("CATEGORY", textColor),
+                              const SizedBox(height: 12),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children:
+                                    (isExpense
+                                            ? categories_expenses
+                                            : categories_income)
+                                        .map(
+                                          (c) => Categorychip(
+                                            selectedCategory: isSelected,
+                                            val: c,
+                                            isDarkMode: widget.isDarkMode,
+                                            onTap: (cat) => setSheetState(
+                                              () => onTapCategory(cat),
+                                            ),
                                           ),
-                                          fontSize: 11,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
+                                        )
+                                        .toList(),
+                              ),
+                              const SizedBox(height: 24),
+
+                              _buildSheetLabel("FROM WALLET", textColor),
+                              const SizedBox(height: 10),
+                              _buildInlineWalletPicker(
+                                textColor,
+                                setSheetState,
+                              ),
+
+                              const SizedBox(height: 24),
+
+                              _buildSheetLabel("DESCRIPTION", textColor),
+                              const SizedBox(height: 10),
+                              _buildInlineTextField(
+                                titleController,
+                                "What was this for?",
+                                textColor,
+                              ),
+                            ],
                           ),
                         ),
+                      ),
 
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SheetLabel(
-                            isDarkMode: widget.isDarkMode,
-                            text: "CATEGORY",
-                          ),
-                          const SizedBox(height: 12),
-                          Wrap(
-                            spacing: 12,
-                            runSpacing: 12,
-                            children: isExpense
-                                ? categories_expenses
-                                      .map(
-                                        (c) => Categorychip(
-                                          selectedCategory: isSelected,
-                                          val: c,
-                                          isDarkMode: widget.isDarkMode,
-                                          onTap: onTapCategory,
-                                        ),
-                                      )
-                                      .toList()
-                                : categories_income
-                                      .map(
-                                        (c) => Categorychip(
-                                          selectedCategory: isSelected,
-                                          val: c,
-                                          isDarkMode: widget.isDarkMode,
-                                          onTap: onTapCategory,
-                                        ),
-                                      )
-                                      .toList(),
-                          ),
-                          const SizedBox(height: 24),
+                      const SizedBox(height: 24),
 
-                          SheetLabel(
-                            isDarkMode: widget.isDarkMode,
-                            text: "DESCRIPTION",
+                      ElevatedButton(
+                        onPressed: isLoading || wrongWallet || wrongAmount
+                            ? null
+                            : onSaveTransaction,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: FinTrackTheme.primaryColor,
+                          minimumSize: const Size(double.infinity, 54),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
                           ),
-                          const SizedBox(height: 12),
-
-                          Container(
-                            decoration: BoxDecoration(
-                              color: widget.isDarkMode
-                                  ? Colors.white.withOpacity(0.05)
-                                  : Colors.black.withOpacity(0.05),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: widget.isDarkMode
-                                    ? Colors.white10
-                                    : Colors.black12,
-                              ),
-                            ),
-                            child: TextField(
-                              controller: titleController,
-                              style: TextStyle(
-                                color: textColor,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              decoration: InputDecoration(
-                                hintText: "What was this for?",
-                                hintStyle: TextStyle(
-                                  color: textColor.withOpacity(0.3),
-                                  fontSize: 14,
+                          elevation: 0,
+                        ),
+                        child: isLoading
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
                                 ),
-                                prefixIcon: Icon(
-                                  Icons.edit_note_rounded,
-                                  color: textColor.withOpacity(0.5),
-                                ),
-                                border: InputBorder.none,
-                                contentPadding: const EdgeInsets.symmetric(
-                                  vertical: 15,
+                              )
+                            : const Text(
+                                "SAVE TRANSACTION",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
                                 ),
                               ),
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-
-                          SheetLabel(
-                            isDarkMode: widget.isDarkMode,
-                            text: "FROM WALLET",
-                          ),
-                          const SizedBox(height: 12),
-                          // Simplified Account Selection (Visual only for now)
-                          InkWell(
-                            onTap: () {
-                              _showWalletPicker(context, setSheetState);
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                              decoration: BoxDecoration(
-                                color: widget.isDarkMode
-                                    ? Colors.white.withOpacity(0.05)
-                                    : Colors.black.withOpacity(0.05),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: widget.isDarkMode
-                                      ? Colors.white10
-                                      : Colors.black12,
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.account_balance_wallet_rounded,
-                                    color: selectedColorValue == 0
-                                        ? textColor.withOpacity(0.5)
-                                        : Color(selectedColorValue),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    selectedWalletName == ""
-                                        ? "Select Wallet"
-                                        : selectedWalletName,
-                                    style: TextStyle(
-                                      color: textColor,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  const Spacer(),
-                                  Icon(
-                                    Icons.arrow_drop_down_rounded,
-                                    color: textColor.withOpacity(0.5),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          if (wrongWallet)
-                            Padding(
-                              padding: const EdgeInsets.only(
-                                top: 12.0,
-                                bottom: 12,
-                              ),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 10,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.redAccent.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: Colors.redAccent.withOpacity(0.2),
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.warning_amber_rounded,
-                                      color: Colors.redAccent,
-                                      size: 18,
-                                    ),
-                                    const SizedBox(width: 10),
-                                    const Text(
-                                      "Please select a wallet",
-                                      style: TextStyle(
-                                        color: Colors.redAccent,
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                        ],
                       ),
                     ],
                   ),
                 ),
               ),
-
-              // 5. SAVE BUTTON (Consistent size)
-              Padding(
-                padding: const EdgeInsets.only(top: 16),
-                child: ElevatedButton(
-                  onPressed: isLoading || wrongWallet || wrongAmount
-                      ? null
-                      : onSaveTransaction,
-                  style: ElevatedButton.styleFrom(
-                    disabledBackgroundColor: FinTrackTheme.primaryColor
-                        .withOpacity(0.3),
-                    backgroundColor: FinTrackTheme.primaryColor.withOpacity(
-                      isLoading || wrongWallet || wrongAmount ? 0.3 : 1,
-                    ),
-                    minimumSize: const Size(
-                      double.infinity,
-                      56,
-                    ), // Standardized height
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: isLoading
-                      ? CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white,
-                          ),
-                        )
-                      : const Text(
-                          "SAVE TRANSACTION",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            letterSpacing: 1.0,
-                          ),
-                        ),
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAccountTile(
-    String name,
-    String balance,
-    IconData icon,
-    bool isDarkMode,
-    Color textColor,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDarkMode
-            ? Colors.white.withOpacity(0.03)
-            : Colors.black.withOpacity(0.02),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: FinTrackTheme.primaryColor.withOpacity(0.3),
-        ), // Highlighted selected source
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: textColor.withOpacity(0.6)),
-          const SizedBox(width: 12),
-          Text(name, style: const TextStyle(fontWeight: FontWeight.w600)),
-          const Spacer(),
-          Text(
-            balance,
-            style: TextStyle(color: textColor.withOpacity(0.5), fontSize: 13),
-          ),
-        ],
-      ),
     );
   }
 
@@ -753,101 +574,6 @@ class _ExpenseModalState extends ConsumerState<ExpenseModal> {
                 : (widget.isDarkMode ? Colors.white54 : Colors.black54),
             fontSize: 12,
             fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCategoryChip(
-    bool isDarkMode,
-    CategoryItem selectedItem,
-    CategoryItem val,
-    Function(CategoryItem) onTap,
-  ) {
-    final bool isSelected = selectedItem == val;
-    return GestureDetector(
-      onTap: () {
-        onTap(val);
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeInOut,
-        // 1. Ukuran membesar saat terpilih
-        padding: EdgeInsets.symmetric(
-          horizontal: isSelected ? 18 : 16,
-          vertical: isSelected ? 12 : 10,
-        ),
-        decoration: BoxDecoration(
-          // 2. Background Fill jika terpilih, sangat tipis jika tidak (efek disable)
-          color: isSelected
-              ? FinTrackTheme.primaryColor
-              : (isDarkMode
-                    ? Colors.white.withOpacity(0.03)
-                    : Colors.black.withOpacity(0.03)),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            // Border lebih redup jika tidak terpilih
-            color: isSelected
-                ? FinTrackTheme.primaryColor
-                : Colors.white.withOpacity(0.05),
-            width: isSelected ? 2 : 1,
-          ),
-        ),
-        child: AnimatedOpacity(
-          duration: const Duration(milliseconds: 200),
-          // 3. Efek Disable Tipis: Opacity 0.5 jika tidak terpilih
-          opacity: isSelected ? 1.0 : 0.5,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                val.icon,
-                size: isSelected ? 20 : 18,
-                color: isSelected ? Colors.white : FinTrackTheme.primaryColor,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                val.name,
-                style: TextStyle(
-                  fontSize: isSelected ? 15 : 14,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                  color: isSelected
-                      ? Colors.white
-                      : (isDarkMode ? Colors.white70 : Colors.black54),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // Helper for the Toggle Tabs
-  Widget _buildTypeTab({
-    required String label,
-    required bool isSelected,
-    required Color activeColor,
-    required VoidCallback onTap,
-  }) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: isSelected ? activeColor : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Center(
-            child: Text(
-              label,
-              style: TextStyle(
-                color: isSelected ? Colors.white : Colors.grey,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
           ),
         ),
       ),

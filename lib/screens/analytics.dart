@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart'; // You'll need to add fl_chart to pubspec.yaml
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:penny_wise/model/expenseCategory.dart';
 import 'package:penny_wise/provider/statProv.dart';
 import 'package:penny_wise/utils/formatters.dart';
 import '../theme.dart';
-// ... imports (make sure to include your theme and fl_chart)
 
 class AnalyticsPage extends ConsumerStatefulWidget {
   const AnalyticsPage({super.key});
@@ -486,124 +484,6 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
       ),
     );
   }
-
-  Widget _buildMainChartCard(
-    bool isDarkMode,
-    double total,
-    List<FlSpot> spots,
-    String currentView,
-  ) {
-    final textColor = FinTrackTheme.getTextColor(isDarkMode);
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24),
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
-      decoration: BoxDecoration(
-        color: isDarkMode
-            ? Colors.white.withOpacity(0.05)
-            : Colors.black.withOpacity(0.03),
-        borderRadius: BorderRadius.circular(30),
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Total Spending",
-                    style: TextStyle(
-                      color: textColor.withOpacity(0.5),
-                      fontSize: 12,
-                    ),
-                  ),
-                  Text(
-                    "\$${total.toStringAsFixed(2)}",
-                    style: TextStyle(
-                      color: textColor,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              // View Toggle
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: isDarkMode ? Colors.white10 : Colors.black12,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    _buildChartToggle(
-                      "Week",
-                      currentView == "Week",
-                      isDarkMode,
-                    ),
-                    _buildChartToggle(
-                      "Month",
-                      currentView == "Month",
-                      isDarkMode,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 32),
-          SizedBox(
-            height: 180,
-            child: LineChart(
-              LineChartData(
-                lineTouchData: LineTouchData(
-                  touchTooltipData: LineTouchTooltipData(
-                    getTooltipColor: (spot) => FinTrackTheme.primaryColor,
-                    getTooltipItems: (spots) => spots
-                        .map(
-                          (s) => LineTooltipItem(
-                            '\$${s.y}',
-                            const TextStyle(color: Colors.white),
-                          ),
-                        )
-                        .toList(),
-                  ),
-                ),
-                gridData: FlGridData(show: false),
-                titlesData: FlTitlesData(show: false),
-                borderData: FlBorderData(show: false),
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: spots, // <--- DYNAMIC DATA HERE
-                    isCurved: true,
-                    color: FinTrackTheme.primaryColor,
-                    barWidth: 4,
-                    isStrokeCapRound: true,
-                    dotData: const FlDotData(show: false),
-                    belowBarData: BarAreaData(
-                      show: true,
-                      gradient: LinearGradient(
-                        colors: [
-                          FinTrackTheme.primaryColor.withOpacity(0.2),
-                          Colors.transparent,
-                        ],
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          SizedBox(height: 30),
-        ],
-      ),
-    );
-  }
-
   Widget _buildChartToggle(String label, bool isSelected, bool isDarkMode) {
     return GestureDetector(
       onTap: () => ref.read(chartViewProvider.notifier).state = label,

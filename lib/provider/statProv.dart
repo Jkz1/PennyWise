@@ -1,10 +1,8 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:intl/intl.dart';
 import 'package:penny_wise/provider/wallet.dart';
 
-// Default to the current month
 final activeMonthProvider = StateProvider<DateTime>((ref) => DateTime.now());
 final chartViewProvider = StateProvider<String>((ref) => "Week");
 final monthlyIncomeExpensesProvider =
@@ -24,7 +22,6 @@ final monthlyIncomeExpensesProvider =
           double totalIncome = 0;
           double totalExpense = 0;
 
-          // These maps will store category names as keys and their sums as values
           Map<String, double> incomeByCategory = {};
           Map<String, double> expenseByCategory = {};
 
@@ -74,11 +71,8 @@ final weeklyIncomeExpensesProvider =
 
       return transactionsAsync.maybeWhen(
         data: (list) {
-          // 1. Define your date range
-          // This gets the start of the day 7 days ago
           final startOfRange = selectedDate.subtract(const Duration(days: 7));
-          // To ensure we include everything on the 'selectedDate' (today),
-          // we set the end boundary to the very end of that day.
+
           final endOfRange = DateTime(
             selectedDate.year,
             selectedDate.month,
@@ -90,7 +84,7 @@ final weeklyIncomeExpensesProvider =
           final filteredItems = list.where((t) {
             final rawTimestamp = t['timestamp'];
             final date = DateFormat("HH:mm dd/MM/yyyy").parse(rawTimestamp);
-            // 2. Check if the date is within the last 7 days
+
             return date.isAfter(startOfRange) && date.isBefore(endOfRange);
           });
 
@@ -141,7 +135,7 @@ final weeklyIncomeExpensesProvider =
     });
 final analyticsDataProvider = Provider((ref) {
   final transactionsAsync = ref.watch(transactionHistory);
-  final view = ref.watch(chartViewProvider); // "Week" or "Month"
+  final view = ref.watch(chartViewProvider);
   final now = DateTime.now();
 
   return transactionsAsync.maybeWhen(
@@ -151,8 +145,6 @@ final analyticsDataProvider = Provider((ref) {
       double totalSpendingYear = 0;
       Map<String, double> categoryMap = {};
 
-      // Initialize the activity map based on the view
-      // Week: 1-7 (Mon-Sun) | Month: 1-12 (Jan-Dec)
       Map<int, double> activitySpending = {};
       if (view == "Week") {
         for (int i = 1; i <= 7; i++) activitySpending[i] = 0;
@@ -168,40 +160,33 @@ final analyticsDataProvider = Provider((ref) {
           final double amount = (tx['amount'] ?? 0).toDouble();
           final bool isExpense = tx['isExpense'] ?? true;
 
-          // 1. Only process if it's an expense AND within the current year
           if (isExpense && date.year == now.year) {
             totalSpendingYear += amount;
 
-            // Category Aggregation (Yearly)
             final String category = tx['category'] ?? 'Other';
             categoryMap[category] = (categoryMap[category] ?? 0) + amount;
 
-            // 2. Dynamic Activity Spending
             if (view == "Week") {
-              // Only add to weekly chart if the transaction happened this week
-              // (Optional: remove the 'isThisWeek' check if you want 'all-time' weekday averages)
               activitySpending[date.weekday] =
                   (activitySpending[date.weekday] ?? 0) + amount;
             } else {
-              // Monthly view: Group by month (1 = Jan, 12 = Dec)
               activitySpending[date.month] =
                   (activitySpending[date.month] ?? 0) + amount;
             }
           }
         } catch (e) {
-          continue; // Skip malformed dates
+          continue;
         }
       }
-      // Calculate how many days have passed in the current year
-      // .difference returns a Duration; we add 1 so we don't divide by zero on Jan 1st.
+
       final int daysPassed =
           now.difference(DateTime(now.year, 1, 1)).inDays + 1;
       return {
-        'total': totalSpendingYear, // Total for the current year
+        'total': totalSpendingYear,
         'avgDaily': totalSpendingYear / daysPassed,
         'categories': categoryMap.entries.toList()
           ..sort((a, b) => b.value.compareTo(a.value)),
-        'activity': activitySpending, // Renamed from 'daily' for clarity
+        'activity': activitySpending,
       };
     },
     orElse: () => null,

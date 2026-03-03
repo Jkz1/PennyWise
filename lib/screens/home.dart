@@ -2,6 +2,7 @@
 
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:penny_wise/components/floatingNav.dart';
 import 'package:penny_wise/components/transactionHistory.dart';
@@ -632,7 +633,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     return Scaffold(
       // backgroundColor: Color(0xFFFFFFFF),
-      extendBody: true, // Allows bottom nav to be transparent/blur
+      extendBody: false, // Allows bottom nav to be transparent/blur
       body: SizedBox(
         height: double.infinity,
         child: Stack(

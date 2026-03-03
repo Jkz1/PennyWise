@@ -41,13 +41,11 @@ final plannedItem = StreamProvider<List<dynamic>>((ref) {
 
 final plannedHistoryProvider = Provider<List<dynamic>>((ref) {
   final transactionHistoryAsync = ref.watch(transactionHistory);
-
   return transactionHistoryAsync.when(
     data: (transactions) {
       final filtered = transactions.where((item) {
-        return item is Map && item['isPlanned'] == true;
+        return item['isPlanned'] == true;
       }).toList();
-
       return filtered;
     },
     loading: () => [],
