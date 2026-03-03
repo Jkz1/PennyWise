@@ -280,7 +280,6 @@ class _ExpenseModalState extends ConsumerState<ExpenseModal> {
                   ) // Darker background for contrast
                 : Colors.white.withOpacity(0.8),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(40)),
-            border: Border.all(color: Colors.white.withOpacity(0.2)),
           ),
           padding: const EdgeInsets.symmetric(
             horizontal: 24,

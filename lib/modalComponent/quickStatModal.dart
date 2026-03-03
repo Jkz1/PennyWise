@@ -60,7 +60,6 @@ class _QuickStatState extends ConsumerState<QuickStat> {
                 ? Colors.black.withOpacity(0.7)
                 : Colors.white.withOpacity(0.8),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(40)),
-            border: Border.all(color: Colors.white.withOpacity(0.2)),
           ),
           padding: const EdgeInsets.all(32),
           child: Column(

@@ -366,7 +366,6 @@ class _PlannedModalState extends ConsumerState<PlannedModal> {
               ? Colors.black.withOpacity(0.7)
               : Colors.white.withOpacity(0.8),
           borderRadius: const BorderRadius.vertical(top: Radius.circular(40)),
-          border: Border.all(color: Colors.white.withOpacity(0.2)),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
         child: Column(

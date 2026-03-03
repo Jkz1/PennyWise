@@ -69,7 +69,6 @@ void showTransferModal(
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(40),
               ),
-              border: Border.all(color: Colors.white.withOpacity(0.1)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

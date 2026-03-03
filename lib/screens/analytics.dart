@@ -22,7 +22,51 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
     final textColor = FinTrackTheme.getTextColor(isDarkMode);
     final analytics = ref.watch(analyticsDataProvider);
     if (analytics == null) {
-      return const Center(child: CircularProgressIndicator());
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 60),
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: isDarkMode
+                        ? Colors.white.withOpacity(0.05)
+                        : Colors.black.withOpacity(0.03),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.receipt_long_rounded,
+                    size: 64,
+                    color: textColor.withOpacity(0.2),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  "No Transactions Yet",
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "Start adding expenses to see your analytics here.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: textColor.withOpacity(0.4),
+                    fontSize: 14,
+                    height: 1.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
     }
     final categories =
         analytics['categories'] as List<MapEntry<String, double>>;
@@ -195,7 +239,20 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
     if (maxVal == 0) maxVal = 1;
 
     final List<String> days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-    final List<String> monthDays = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    final List<String> monthDays = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
     print(dailyData);
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 24),
@@ -259,7 +316,7 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
             scrollDirection: Axis.horizontal,
             child: ConstrainedBox(
               constraints: BoxConstraints(
-                minWidth: MediaQuery.of(context).size.width-100
+                minWidth: MediaQuery.of(context).size.width - 100,
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -315,7 +372,7 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
                             width: 12,
                             height: 80 * ratio,
                             decoration: BoxDecoration(
-                              color: dailyData[index+1]! > 0.8
+                              color: dailyData[index + 1]! > 0.8
                                   ? FinTrackTheme.primaryColor
                                   : FinTrackTheme.primaryColor.withOpacity(0.3),
                               borderRadius: BorderRadius.circular(10),

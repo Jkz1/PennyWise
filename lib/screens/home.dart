@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:penny_wise/components/floatingNav.dart';
+import 'package:penny_wise/components/transactionHistory.dart';
 import 'package:penny_wise/modalComponent/addExpenseModal.dart';
 import 'package:penny_wise/components/backgroundBlob.dart';
 import 'package:penny_wise/components/categoryChip.dart';
@@ -18,6 +19,7 @@ import 'package:penny_wise/provider/userProv.dart';
 import 'package:penny_wise/provider/wallet.dart';
 import 'package:penny_wise/screens/analytics.dart';
 import 'package:penny_wise/screens/profile.dart';
+import 'package:penny_wise/screens/History.dart';
 import 'package:penny_wise/screens/wallet.dart';
 import 'package:penny_wise/services/test.dart';
 import 'package:penny_wise/theme.dart';
@@ -657,9 +659,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // --- HEADER ---
-                          ElevatedButton(onPressed: (){
-                            recordExpense();
-                          }, child: Text("Hai")),
+                          
                           _buildHeader(textColor, isDarkMode),
                           const SizedBox(height: 24),
 
@@ -694,7 +694,15 @@ class _HomePageState extends ConsumerState<HomePage> {
                                 textColor: textColor,
                               ),
                               TextButton(
-                                onPressed: () {},
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const HistoryPage(),
+                                    ),
+                                  );
+                                },
                                 child: Text(
                                   "See All",
                                   style: TextStyle(
@@ -810,7 +818,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
-                    "Total Balanace",
+                    "Total Balance",
                     style: TextStyle(color: Colors.white70, fontSize: 16),
                   ),
                   IconButton(
@@ -935,14 +943,9 @@ class _HomePageState extends ConsumerState<HomePage> {
           itemCount: transactions.length,
           itemBuilder: (context, index) {
             final item = transactions[index];
-            return _buildTransactionItem(
-              walletName: item['walletName'],
-              title: item['title'],
-              category: item['category'],
-              amount: item['amount'],
-              isExpense: item['isExpense'],
+            return HistoryItem(
+              item: item,
               textColor: textColor,
-              isDarkMode: isDarkMode,
               glassColor: glassColor,
               glassBorder: glassBorder,
             );

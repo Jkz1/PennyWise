@@ -69,7 +69,6 @@ void showCreatePlanSheet(
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(40),
               ),
-              border: Border.all(color: Colors.white.withOpacity(0.2)),
             ),
             padding: const EdgeInsets.all(32),
             child: Column(

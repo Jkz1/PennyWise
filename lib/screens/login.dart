@@ -4,6 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:penny_wise/components/backgroundBlob.dart';
 import 'package:penny_wise/components/glassTextField.dart';
 import 'package:penny_wise/provider/darkModeProv.dart';
+import 'package:penny_wise/provider/plannedProv.dart';
+import 'package:penny_wise/provider/statProv.dart';
+import 'package:penny_wise/provider/userProv.dart';
+import 'package:penny_wise/provider/wallet.dart';
 import 'package:penny_wise/screens/home.dart';
 import 'package:penny_wise/screens/registration.dart';
 import 'package:penny_wise/services/auth.dart';
@@ -45,19 +49,29 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         await authService.login(email, password);
         final SharedPreferences prefs = await SharedPreferences.getInstance();
         await prefs.setBool('is_logged_in', true);
+
+        ref.invalidate(plannedHistoryProvider);
+        ref.invalidate(plannedItem);
+        ref.invalidate(activeMonthProvider);
+        ref.invalidate(chartViewProvider);
+        ref.invalidate(monthlyIncomeExpensesProvider);
+        ref.invalidate(weeklyIncomeExpensesProvider);
+        ref.invalidate(analyticsDataProvider);
+        ref.invalidate(userDataProvider);
+        ref.invalidate(walletListProvider);
+        ref.invalidate(transactionHistory);
+        ref.invalidate(combinedTransactionProvider);
+        ref.invalidate(totalBalanceProvider);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text("Login Successful!"),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating, // Makes it look modern
-            
           ),
         );
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (_) => HomePage(),
-          ),
-        );
+        Navigator.of(
+          context,
+        ).pushReplacement(MaterialPageRoute(builder: (_) => HomePage()));
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -254,7 +268,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                               ),
 
                               const SizedBox(height: 12),
-
 
                               const SizedBox(height: 24),
 

@@ -27,7 +27,7 @@ final walletListProvider = StreamProvider<List<dynamic>>((ref) {
       });
 });
 
-final transactionHistory = StreamProvider<List<dynamic>>((ref) { 
+final transactionHistory = StreamProvider<List<Map<String, dynamic>>>((ref) { 
   final walletsAsync = ref.watch(walletListProvider);
   final firestore = FirebaseFirestore.instance;
   final String uid = FirebaseAuth.instance.currentUser!.uid;
